@@ -1,0 +1,13 @@
+import axios from "axios";
+
+export const API_BASE = "http://localhost:5000";
+
+export const testConnection = async () => {
+  try {
+    const response = await axios.get(`${API_BASE}/`);
+    return response.data; // Should return "API is running..."
+  } catch (error: any) {
+    console.error("API Error:", error.message);
+    throw error;
+  }
+};
