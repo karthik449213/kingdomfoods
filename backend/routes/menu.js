@@ -1,11 +1,11 @@
-const express = require("express");
+import express from "express";
 const router = express.Router();
-const auth = require("../middleware/auth");
-const menuController = require("../controllers/menuController");
+import auth from "../middleware/auth.js";
+import { createMenuItem, getMenu, updateMenuItem, deleteMenuItem } from "../controllers/menuController.js";
 
-router.post("/add", auth, menuController.createMenuItem);
-router.get("/", auth, menuController.getMenu);
-router.put("/:id", auth, menuController.updateMenuItem);
-router.delete("/:id", auth, menuController.deleteMenuItem);
+router.post("/add", auth, createMenuItem);
+router.get("/", getMenu);
+router.put("/:id", auth, updateMenuItem);
+router.delete("/:id", auth, deleteMenuItem);
 
-module.exports = router;
+export default router;

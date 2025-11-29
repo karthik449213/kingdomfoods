@@ -1,6 +1,6 @@
-const express = require("express");
+import express from "express";
 const router = express.Router();
-const auth = require("../middleware/auth");
+import auth from "../middleware/auth.js";
 
 router.get("/", auth, (req, res) => {
   res.json({
@@ -9,4 +9,4 @@ router.get("/", auth, (req, res) => {
   });
 });
 
-module.exports = router;
+export default router;

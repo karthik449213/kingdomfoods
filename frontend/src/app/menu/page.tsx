@@ -3,126 +3,81 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
 
-export default function MenuPage() {
+export default function CustomerMenu() {
   const [menu, setMenu] = useState<any[]>([]);
-  const [form, setForm] = useState({
-    name: "",
-    price: "",
-    category: "",
-    description: "",
-  });
+  const [loading, setLoading] = useState(true);
 
-  const token = typeof window !== "undefined" ? localStorage.getItem("token") : "";
-
-  // Fetch menu items
+  // Load menu
   const loadMenu = async () => {
     try {
-      const res = await axios.get("/menu", {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      const res = await axios.get("http://localhost:5000/api/menu");
       setMenu(res.data);
-    } catch (err: any) {
+    } catch (err) {
       console.log(err);
     }
+    setLoading(false);
   };
 
   useEffect(() => {
     loadMenu();
   }, []);
 
-  // Handle input changes
-  const handleChange = (e: any) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
+  // Add to cart
+  const addToCart = (dish: any) => {
+    const comment = prompt(
+      "Any requirements? (e.g., No sugar, Extra spicy, Less salt)"
+    );
+
+    const cartItem = {
+      ...dish,
+      requirements: comment || "",
+      quantity: 1,
+    };
+
+    const existing = localStorage.getItem("cart");
+    const cart = existing ? JSON.parse(existing) : [];
+
+    cart.push(cartItem);
+    localStorage.setItem("cart", JSON.stringify(cart));
+
+    alert("Added to cart!");
   };
 
-  // Add dish
-  const handleAdd = async () => {
-    try {
-      await axios.post("/menu/add", form, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      alert("Dish Added");
-      loadMenu();
-    } catch (err: any) {
-      alert("Error Adding Dish");
-      console.log(err);
-    }
-  };
-
-  // Delete dish
-  const handleDelete = async (id: string) => {
-    try {
-      await axios.delete(`/menu/${id}`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      alert("Dish Deleted");
-      loadMenu();
-    } catch (err: any) {
-      console.log(err);
-    }
-  };
+  if (loading) return <p>Loading menu...</p>;
 
   return (
     <div style={{ padding: "20px" }}>
-      <h2>Menu Management</h2>
-
-      {/* Add Menu Form */}
-      <div style={{ marginTop: "20px" }}>
-        <h3>Add Dish</h3>
-
-        <input
-          type="text"
-          name="name"
-          placeholder="Dish Name"
-          value={form.name}
-          onChange={handleChange}
-        /><br /><br />
-
-        <input
-          type="number"
-          name="price"
-          placeholder="Price"
-          value={form.price}
-          onChange={handleChange}
-        /><br /><br />
-
-        <input
-          type="text"
-          name="category"
-          placeholder="Category"
-          value={form.category}
-          onChange={handleChange}
-        /><br /><br />
-
-        <input
-          type="text"
-          name="description"
-          placeholder="Description"
-          value={form.description}
-          onChange={handleChange}
-        /><br /><br />
-
-        <button onClick={handleAdd}>Add Dish</button>
-      </div>
-
-      <hr style={{ margin: "30px 0" }} />
-
-      {/* Display All Menu Items */}
-      <h3>Menu Items</h3>
+      <h2>Restaurant Menu</h2>
 
       {menu.length === 0 ? (
-        <p>No dishes added.</p>
+        <p>No dishes available right now.</p>
       ) : (
         menu.map((item) => (
-          <div key={item._id} style={{ marginBottom: "15px" }}>
-            <strong>{item.name}</strong> — ₹{item.price}  
-            <br />
+          <div
+            key={item._id}
+            style={{
+              border: "1px solid #ddd",
+              padding: "15px",
+              marginBottom: "15px",
+              borderRadius: "6px",
+            }}
+          >
+            <h3>{item.name}</h3>
+            <p>₹{item.price}</p>
             <small>{item.category}</small>
-            <br />
-            <button onClick={() => handleDelete(item._id)}>Delete</button>
+            <p>{item.description}</p>
+
+            <button onClick={() => addToCart(item)}>
+              Add to Cart
+            </button>
           </div>
         ))
       )}
+
+      <br />
+      <a href="/cart">
+        <button>Go to Cart</button>
+      </a>
     </div>
   );
 }

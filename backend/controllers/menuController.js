@@ -1,7 +1,7 @@
-const Menu = require("../models/Menu");
+import Menu from "../models/Menu.js";
 
 // Add new dish
-exports.createMenuItem = async (req, res) => {
+export const createMenuItem = async (req, res) => {
     try {
         const item = new Menu(req.body);
         await item.save();
@@ -12,7 +12,7 @@ exports.createMenuItem = async (req, res) => {
 };
 
 // Get all dishes
-exports.getMenu = async (req, res) => {
+export const getMenu = async (req, res) => {
     try {
         const menu = await Menu.find();
         res.json(menu);
@@ -22,7 +22,7 @@ exports.getMenu = async (req, res) => {
 };
 
 // Update a dish
-exports.updateMenuItem = async (req, res) => {
+export const updateMenuItem = async (req, res) => {
     try {
         const updated = await Menu.findByIdAndUpdate(req.params.id, req.body, { new: true });
         res.json({ message: "Updated", updated });
@@ -32,7 +32,7 @@ exports.updateMenuItem = async (req, res) => {
 };
 
 // Delete a dish
-exports.deleteMenuItem = async (req, res) => {
+export const deleteMenuItem = async (req, res) => {
     try {
         await Menu.findByIdAndDelete(req.params.id);
         res.json({ message: "Deleted" });

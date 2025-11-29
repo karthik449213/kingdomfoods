@@ -1,8 +1,9 @@
-const express = require("express");
+import express from "express";
+import Admin from "../models/Admin.js";
+import bcrypt from "bcryptjs";
+import jwt from "jsonwebtoken";
+
 const router = express.Router();
-const Admin = require("../models/Admin");
-const bcrypt = require("bcryptjs");
-const jwt = require("jsonwebtoken");
 
 // REGISTER (only once to create the admin account)
 router.post("/register", async (req, res) => {
@@ -60,4 +61,4 @@ router.post("/login", async (req, res) => {
   }
 });
 
-module.exports = router;
+export default router;
