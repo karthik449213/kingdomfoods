@@ -1,57 +1,40 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCart } from "../../context/CartContext";
+import CartItem from "../../components/CartItem";
+import { useRouter } from "next/navigation";
 
 export default function CartPage() {
-  const [cart, setCart] = useState<any[]>([]);
-
-  useEffect(() => {
-    const saved = localStorage.getItem("cart");
-    if (saved) setCart(JSON.parse(saved));
-  }, []);
-
-  const removeItem = (index: number) => {
-    const updated = cart.filter((_, i) => i !== index);
-    setCart(updated);
-    localStorage.setItem("cart", JSON.stringify(updated));
-  };
-
-  const getTotal = () => {
-    return cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
-  };
+  const { items, getTotal } = useCart();
+  const router = useRouter();
 
   return (
-    <div style={{ padding: "20px" }}>
-      <h2>Your Cart</h2>
+    <div className="container mx-auto px-4 py-8">
+      <h1 className="text-3xl font-bold text-center mb-8">Your Cart</h1>
 
-      {cart.length === 0 ? (
-        <p>Your cart is empty.</p>
+      {items.length === 0 ? (
+        <p className="text-center text-gray-600">Your cart is empty.</p>
       ) : (
-        cart.map((item, index) => (
-          <div
-            key={index}
-            style={{
-              border: "1px solid #ddd",
-              padding: "15px",
-              marginBottom: "15px",
-            }}
-          >
-            <h3>{item.name}</h3>
-            <p>₹{item.price}</p>
-            <p>Requirements: {item.requirements || "None"}</p>
-            <button onClick={() => removeItem(index)}>Remove</button>
-          </div>
-        ))
+        <div className="space-y-4">
+          {items.map((item) => (
+            <CartItem key={`${item.id}-${JSON.stringify(item.customizations)}`} item={item} />
+          ))}
+        </div>
       )}
 
-      {cart.length > 0 && (
-        <>
-          <h3>Total: ₹{getTotal()}</h3>
-
-          <a href="/checkout">
-            <button>Proceed to Checkout</button>
-          </a>
-        </>
+      {items.length > 0 && (
+        <div className="mt-8 bg-white p-6 rounded-lg shadow-sm">
+          <div className="flex justify-between items-center mb-4">
+            <span className="text-xl font-semibold">Total:</span>
+            <span className="text-xl font-bold text-blue-600">${getTotal().toFixed(2)}</span>
+          </div>
+          <button
+            onClick={() => router.push('/invoice')}
+            className="w-full bg-blue-600 text-white py-3 px-6 rounded-lg hover:bg-blue-700 transition-colors font-semibold"
+          >
+            Proceed to Invoice
+          </button>
+        </div>
       )}
     </div>
   );

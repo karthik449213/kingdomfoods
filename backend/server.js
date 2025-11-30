@@ -1,22 +1,27 @@
+import dotenv from "dotenv";
+// Load env vars FIRST
+dotenv.config();
+console.log("API Key:", process.env.CLOUD_API_KEY);
+
 import express from "express";
 import cors from "cors";
-import dotenv from "dotenv";
 import connectDB from "./config/db.js";
-import authRoutes from "./routes/auth.js";
+import authRoutes from "./routes/authRoutes.js";
 import dashboardRoutes from "./routes/dashboard.js";
-import menuRoutes from "./routes/menu.js";
+import categoryRoutes from "./routes/categoryRoutes.js";
 import dishRoutes from "./routes/dishRoutes.js";
-
-dotenv.config();
+import menuRoutes from "./routes/menuRoutes.js";
 const app = express();
 
 // Middleware
 app.use(cors());
 app.use(express.json());
-app.use("/auth", authRoutes);
+app.use("/api/auth", authRoutes);
 app.use("/dashboard", dashboardRoutes);
-app.use("/api/menu",menuRoutes);
-app.use("/api",dishRoutes);
+app.use("/api/categories", categoryRoutes);
+
+app.use("/menu", dishRoutes);
+app.use("/api/menu", menuRoutes);
 
 // Connect Database
 connectDB();
