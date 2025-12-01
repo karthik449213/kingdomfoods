@@ -1,0 +1,9 @@
+node_modules/
+package-lock.json
+/.next
+.env
+.env.local
+/.netlify
+dist/
+frontend/node_modules/
+backend/node_modules/
