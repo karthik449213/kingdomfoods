@@ -10,7 +10,7 @@ export default function CartItem({ item }: CartItemProps) {
 
   return (
     <div className="flex items-center gap-4 p-4 bg-white rounded-lg shadow-sm">
-      <div className="relative w-16 h-16 flex-shrink-0">
+      <div className="relative w-16 h-16 shrink-0">
         <Image
           src={item.image}
           alt={item.name}
@@ -20,9 +20,9 @@ export default function CartItem({ item }: CartItemProps) {
       </div>
       <div className="flex-1">
         <h3 className="font-semibold text-gray-800">{item.name}</h3>
-        <p className="text-sm text-gray-600">${item.price.toFixed(2)}</p>
-        {item.notes && (
-          <p className="text-xs text-gray-500 mt-1">Notes: {item.notes}</p>
+        <p className="text-sm text-gray-600">₹{item.price.toFixed(2)}</p>
+        {item.customizations.notes && (
+          <p className="text-xs text-gray-500 mt-1">Notes: {item.customizations.notes}</p>
         )}
       </div>
       <div className="flex items-center gap-2">

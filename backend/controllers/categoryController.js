@@ -6,7 +6,15 @@ import Dish from "../models/Dish.js";
 export const getCategories = async (req, res) => {
   try {
     const categories = await Category.find();
-    res.json(categories);
+    // Ensure slug is present for all categories (generate if missing)
+    const categoriesWithSlug = categories.map((cat) => {
+      const catObj = cat.toObject();
+      if (!catObj.slug) {
+        catObj.slug = generateSlug(cat.name);
+      }
+      return catObj;
+    });
+    res.json(categoriesWithSlug);
   } catch (error) {
     res.status(500).json({ message: "Error fetching categories", error });
   }

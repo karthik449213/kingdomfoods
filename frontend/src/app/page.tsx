@@ -33,14 +33,18 @@ export default function Home() {
         <p>No categories available right now.</p>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {categories.map((category) => (
-            <CategoryCard
-              key={category._id}
-              name={category.name}
-              image={category.image || "/placeholder.jpg"}
-              slug={category.slug}
-            />
-          ))}
+          {categories.map((category) => {
+            // Fallback slug generation if missing
+            const slug = category.slug || category.name?.toLowerCase().trim().replace(/[^\w\s-]/g, '').replace(/[\s_-]+/g, '-').replace(/^-+|-+$/g, '');
+            return (
+              <CategoryCard
+                key={category._id}
+                name={category.name}
+                image={category.image || "/placeholder.jpg"}
+                slug={slug}
+              />
+            );
+          })}
         </div>
       )}
     </div>
