@@ -1,6 +1,6 @@
 import express from "express";
 import upload from "../middleware/upload.js";
-import { getCategories, createCategory, getSubcategories, createSubcategory, getDishesForSubcategory } from "../controllers/categorycontroller.js";
+import { getCategories, createCategory, getSubcategories, createSubcategory, getDishesForSubcategory } from "../controllers/categoryController.js";
 
 const router = express.Router();
 
