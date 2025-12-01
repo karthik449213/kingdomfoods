@@ -16,7 +16,7 @@ export default function Dashboard() {
     }
 
     axios
-      .get("http://localhost:5000/dashboard", {
+      .get("https://kingdomfoods.onrender.com/dashboard", {
         headers: { Authorization: `Bearer ${token}` }
       })
       .then((res) => {

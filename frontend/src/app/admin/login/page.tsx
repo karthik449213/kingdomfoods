@@ -9,7 +9,7 @@ export default function AdminLogin() {
 
   const handleLogin = async () => {
     try {
-      const res = await axios.post("http://localhost:5000/auth/login", {
+      const res = await axios.post("https://kingdomfoods.onrender.com/auth/login", {
         email,
         password,
       });

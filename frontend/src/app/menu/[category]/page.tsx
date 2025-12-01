@@ -15,7 +15,7 @@ export default function CategoryPage() {
   // Load subcategories for the category
   const loadSubcategories = async () => {
     try {
-      const res = await axios.get(`http://localhost:5000/api/categories/${categorySlug}/subcategories`);
+      const res = await axios.get(`https://kingdomfoods.onrender.com/api/categories/${categorySlug}/subcategories`);
       setSubcategories(res.data);
     } catch (err) {
       console.log(err);

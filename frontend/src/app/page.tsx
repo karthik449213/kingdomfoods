@@ -11,7 +11,7 @@ export default function Home() {
   // Load categories
   const loadCategories = async () => {
     try {
-      const res = await axios.get("http://localhost:5000/api/categories");
+      const res = await axios.get("https://kingdomfoods.onrender.com/api/categories");
       setCategories(res.data);
     } catch (err) {
       console.log(err);
