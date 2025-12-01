@@ -1,12 +1,19 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import axios from "axios";
 import CategoryCard from "../../components/CategoryCard";
 import Link from "next/link";
 
+interface Category {
+  _id: string;
+  name: string;
+  image?: string;
+  slug: string;
+}
+
 export default function MenuPage() {
-  const [categories, setCategories] = useState<any[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {

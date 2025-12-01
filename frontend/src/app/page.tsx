@@ -1,15 +1,22 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import axios from "axios";
 import CategoryCard from "../components/CategoryCard";
 
+interface Category {
+  _id: string;
+  name: string;
+  image?: string;
+  slug: string;
+}
+
 export default function Home() {
-  const [categories, setCategories] = useState<any[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
 
   // Load categories
-  const loadCategories = async () => {
+  const loadCategories = useCallback(async () => {
     try {
       const res = await axios.get("https://kingdomfoods.onrender.com/api/categories");
       setCategories(res.data);
@@ -17,11 +24,11 @@ export default function Home() {
       console.log(err);
     }
     setLoading(false);
-  };
+  }, []);
 
   useEffect(() => {
     loadCategories();
-  }, []);
+  }, [loadCategories]);
 
   if (loading) return <p>Loading categories...</p>;
 

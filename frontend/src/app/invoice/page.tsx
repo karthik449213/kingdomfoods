@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useCart } from "../../context/CartContext";
 import { useState } from "react";
 
@@ -8,7 +9,7 @@ export default function InvoicePage() {
   const PHONE = "917075543886";
   const [copied, setCopied] = useState(false);
 
-  const formatCustomizations = (customizations: any) => {
+  const formatCustomizations = (customizations: { noSugar?: boolean; addChilli?: boolean; extraToppings?: boolean; notes?: string }) => {
     const parts = [];
     if (customizations.noSugar) parts.push("No sugar");
     if (customizations.addChilli) parts.push("Add chilli");
@@ -60,9 +61,9 @@ export default function InvoicePage() {
           <div className="bg-white rounded-2xl shadow-sm p-12 text-center">
             <div className="text-5xl mb-4">🛒</div>
             <p className="text-gray-600 text-lg">Your cart is empty</p>
-            <a href="/menu" className="mt-4 inline-block bg-amber-500 text-white px-6 py-2 rounded-lg hover:bg-amber-600 transition-colors">
+            <Link href="/menu" className="mt-4 inline-block bg-amber-500 text-white px-6 py-2 rounded-lg hover:bg-amber-600 transition-colors">
               Continue Shopping
-            </a>
+            </Link>
           </div>
         ) : (
           <>

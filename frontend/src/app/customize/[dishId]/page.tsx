@@ -15,6 +15,10 @@ interface Dish {
   image: string;
 }
 
+interface ErrorResponse {
+  response?: { data?: { message?: string } };
+}
+
 export default function CustomizeDishPage() {
   const router = useRouter();
   const params = useParams();
@@ -37,8 +41,9 @@ export default function CustomizeDishPage() {
       try {
         const data = await getDish(dishId);
         if (!ignore) setDish(data);
-      } catch (e: any) {
-        setError(e?.response?.data?.message || 'Failed to load dish');
+      } catch (e: unknown) {
+        const err = e as ErrorResponse;
+        setError(err?.response?.data?.message || 'Failed to load dish');
       } finally {
         if (!ignore) setLoading(false);
       }

@@ -1,10 +1,18 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import axios from "axios";
 
-export default function MenuPage() {
-  const [menu, setMenu] = useState<any[]>([]);
+interface MenuItem {
+  _id: string;
+  name: string;
+  category: string;
+  price: number;
+  description: string;
+}
+
+export default function AdminMenuPage() {
+  const [menu, setMenu] = useState<MenuItem[]>([]);
   const [form, setForm] = useState({
     name: "",
     price: "",
