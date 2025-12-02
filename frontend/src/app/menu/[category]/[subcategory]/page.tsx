@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback } from "react";
 import { useParams } from "next/navigation";
 import axios from "axios";
 import DishCard from "../../../../components/DishCard";
+import { API_BASE } from "@/utils/api";
 
 export default function SubcategoryPage() {
   const params = useParams();
@@ -15,7 +16,7 @@ export default function SubcategoryPage() {
   // Load dishes for the subcategory
   const loadDishes = async () => {
     try {
-      const res = await axios.get(`https://kingdomfoods.onrender.com/api/categories/${categorySlug}/subcategories/${subcategorySlug}/dishes`);
+      const res = await axios.get(`${API_BASE}/api/categories/${categorySlug}/subcategories/${subcategorySlug}/dishes`);
       setDishes(res.data);
     } catch (err) {
       console.log(err);

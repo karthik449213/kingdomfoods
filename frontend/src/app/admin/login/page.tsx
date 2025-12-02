@@ -2,24 +2,32 @@
 
 import { useState } from "react";
 import axios from "axios";
+import { useRouter } from "next/navigation";
+import { API_BASE } from "@/utils/api";
 
 export default function AdminLogin() {
-  const [email, setEmail] = useState("");
+  const router = useRouter();
+  const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
 
   const handleLogin = async () => {
     try {
-      const res = await axios.post("https://kingdomfoods.onrender.com/auth/login", {
-        email,
+      const res = await axios.post(`${API_BASE}/api/auth/login`, {
+        username,
         password,
       });
 
       console.log("LOGIN SUCCESS:", res.data);
-      localStorage.setItem("token", res.data.token);
-      alert("Login Successful!");
+      if (res.data?.token) {
+        localStorage.setItem("token", res.data.token);
+      }
+
+      // Redirect to admin dashboard after successful login
+      router.push("/admin/dashboard");
 
     } catch (error: any) {
-      console.error("LOGIN ERROR:", error.response?.data);
+      console.error("LOGIN ERROR (full):", error);
+      console.debug("LOGIN ERROR response data:", error?.response?.data);
       alert("Login Failed!");
     }
   };
@@ -30,9 +38,9 @@ export default function AdminLogin() {
 
       <input
         type="text"
-        placeholder="Email"
-        value={email}
-        onChange={e => setEmail(e.target.value)}
+        placeholder="Username"
+        value={username}
+        onChange={e => setUsername(e.target.value)}
       /><br /><br />
 
       <input

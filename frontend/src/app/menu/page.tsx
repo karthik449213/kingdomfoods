@@ -4,7 +4,7 @@ import { useEffect, useState, useCallback } from "react";
 import axios from "axios";
 import CategoryCard from "../../components/CategoryCard";
 import Link from "next/link";
-
+import { API_BASE } from "@/utils/api";
 interface Category {
   _id: string;
   name: string;
@@ -19,7 +19,7 @@ export default function MenuPage() {
   useEffect(() => {
     const loadCategories = async () => {
       try {
-        const res = await axios.get("https://kingdomfoods.onrender.com/api/categories");
+        const res = await axios.get(`${API_BASE}/api/categories`);
         setCategories(res.data);
       } catch (err) {
         console.error("Error loading categories:", err);

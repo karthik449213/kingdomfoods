@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { useParams } from "next/navigation";
 import axios from "axios";
+import { API_BASE } from "@/utils/api";
 import SubCategoryCard from "../../../components/SubCategoryCard";
 
 export default function CategoryPage() {
@@ -15,7 +16,7 @@ export default function CategoryPage() {
   // Load subcategories for the category
   const loadSubcategories = async () => {
     try {
-      const res = await axios.get(`https://kingdomfoods.onrender.com/api/categories/${categorySlug}/subcategories`);
+      const res = await axios.get(`${API_BASE}/api/categories/${categorySlug}/subcategories`);
       setSubcategories(res.data);
     } catch (err) {
       console.log(err);

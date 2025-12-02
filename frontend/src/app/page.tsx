@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback } from "react";
 import axios from "axios";
 import CategoryCard from "../components/CategoryCard";
+import { API_BASE } from "@/utils/api";
 
 interface Category {
   _id: string;
@@ -18,7 +19,7 @@ export default function Home() {
   // Load categories
   const loadCategories = useCallback(async () => {
     try {
-      const res = await axios.get("https://kingdomfoods.onrender.com/api/categories");
+      const res = await axios.get(`${API_BASE}/api/categories`);
       setCategories(res.data);
     } catch (err) {
       console.log(err);
