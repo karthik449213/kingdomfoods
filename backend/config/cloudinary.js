@@ -9,8 +9,6 @@ cloudinary.config({
   api_secret: process.env.CLOUD_API_SECRET,
 });
 
-console.log("Cloud Name:", process.env.CLOUD_NAME);
-console.log("API Key:", process.env.CLOUD_API_KEY);
 
 
 

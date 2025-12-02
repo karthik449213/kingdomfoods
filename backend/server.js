@@ -1,7 +1,7 @@
 import dotenv from "dotenv";
 // Load env vars FIRST
 dotenv.config();
-console.log("API Key:", process.env.CLOUD_API_KEY);
+
 
 import express from "express";
 import cors from "cors";
