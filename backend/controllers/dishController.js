@@ -26,7 +26,7 @@ export const getDish = async (req, res) => {
 // ADD DISH (admin only)
 export const addDish = async (req, res) => {
   try {
-    const { name, price, description, stars } = req.body;
+    const { name, price, description, category, stars } = req.body;
 
     if (!req.file) {
       return res.status(400).json({ message: "Image is required" });
@@ -40,6 +40,7 @@ export const addDish = async (req, res) => {
       name,
       price,
       description,
+      category,
       stars,
       image: uploadResult.secure_url,
       imagePublicId: uploadResult.public_id,

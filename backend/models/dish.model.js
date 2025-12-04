@@ -8,7 +8,7 @@ const DishSchema = new mongoose.Schema(
     stars: { type: Number, default: 0, min: 0, max: 5 },
     image: { type: String, required: true }, // Cloudinary URL
     imagePublicId: { type: String },
-    subcategory: { type: mongoose.Schema.Types.ObjectId, ref: "Subcategory", required: true },
+    category: { type: mongoose.Schema.Types.ObjectId, ref: "Category", required: true },
   },
   { timestamps: true }
 );

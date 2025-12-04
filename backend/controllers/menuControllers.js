@@ -1,7 +1,16 @@
 import Category from "../models/category.model.js";
-import Subcategory from "../models/subcategory.model.js";
 import Dish from "../models/dish.model.js";
 import cloudinary from "../config/cloudinary.js";
+
+// Helper to generate URL-friendly slug from name
+const generateSlug = (name) => {
+  return name
+    .toLowerCase()
+    .trim()
+    .replace(/[^\w\s-]/g, '') // Remove special characters
+    .replace(/[\s_-]+/g, '-') // Replace spaces and underscores with hyphens
+    .replace(/^-+|-+$/g, ''); // Remove leading/trailing hyphens
+};
 
 // CATEGORY CONTROLLERS
 export const listCategories = async (req, res) => {
@@ -18,12 +27,6 @@ export const createCategory = async (req, res) => {
     const { name } = req.body;
     if (!name) return res.status(400).json({ message: "name is required" });
 
-    let imageUrl = null;
-    let imagePublicId = null;
-    if (req.file) {
-      const upload = await cloudinary.uploader.upload_stream;
-    }
-
     if (!req.file || !req.file.buffer) {
       return res.status(400).json({ message: "image is required" });
     }
@@ -39,8 +42,26 @@ export const createCategory = async (req, res) => {
       stream.end(req.file.buffer);
     });
 
-    const category = await Category.create({ name, image: uploadResult.secure_url });
-    res.status(201).json(category);
+    // generate slug and create category
+    const slug = generateSlug(name || '');
+    try {
+      const category = await Category.create({ name, slug, image: uploadResult.secure_url });
+      return res.status(201).json(category);
+    } catch (dbErr) {
+      // If DB insert failed, remove uploaded image from Cloudinary to avoid orphaned files
+      try {
+        if (uploadResult && uploadResult.public_id) {
+          await cloudinary.uploader.destroy(uploadResult.public_id);
+        }
+      } catch (destroyErr) {
+        console.error('Failed to cleanup Cloudinary image after DB error:', destroyErr);
+      }
+      // If duplicate slug (null or same), return a clear error
+      if (dbErr && dbErr.code === 11000) {
+        return res.status(409).json({ message: 'Category with this slug already exists', error: dbErr.message });
+      }
+      return res.status(500).json({ message: dbErr.message || 'Error creating category', error: dbErr });
+    }
   } catch (e) {
     res.status(500).json({ message: e.message });
   }
@@ -79,93 +100,11 @@ export const updateCategory = async (req, res) => {
 export const deleteCategory = async (req, res) => {
   try {
     const { id } = req.params;
-    const subcatCount = await Subcategory.countDocuments({ category: id });
-    if (subcatCount > 0) {
-      return res.status(400).json({ message: "Delete subcategories first" });
+    const dishCount = await Dish.countDocuments({ category: id });
+    if (dishCount > 0) {
+      return res.status(400).json({ message: "Delete all dishes in this category first" });
     }
     await Category.findByIdAndDelete(id);
-    res.json({ success: true });
-  } catch (e) {
-    res.status(500).json({ message: e.message });
-  }
-};
-
-// SUBCATEGORY CONTROLLERS
-export const listSubcategories = async (req, res) => {
-  try {
-    const { categoryId } = req.params;
-    const subcats = await Subcategory.find(categoryId ? { category: categoryId } : {})
-      .populate("category")
-      .sort({ createdAt: -1 });
-    res.json(subcats);
-  } catch (e) {
-    res.status(500).json({ message: e.message });
-  }
-};
-
-export const createSubcategory = async (req, res) => {
-  try {
-    const { name, categoryId } = req.body;
-    if (!name || !categoryId) return res.status(400).json({ message: "name and categoryId are required" });
-
-    if (!req.file || !req.file.buffer) {
-      return res.status(400).json({ message: "image is required" });
-    }
-
-    const uploadResult = await new Promise((resolve, reject) => {
-      const stream = cloudinary.uploader.upload_stream(
-        { folder: "restaurant_menu/subcategories" },
-        (error, result) => {
-          if (error) return reject(error);
-          resolve(result);
-        }
-      );
-      stream.end(req.file.buffer);
-    });
-
-    const subcategory = await Subcategory.create({ name, image: uploadResult.secure_url, category: categoryId });
-    res.status(201).json(subcategory);
-  } catch (e) {
-    res.status(500).json({ message: e.message });
-  }
-};
-
-export const updateSubcategory = async (req, res) => {
-  try {
-    const { id } = req.params;
-    const { name, categoryId } = req.body;
-    const sub = await Subcategory.findById(id);
-    if (!sub) return res.status(404).json({ message: "Subcategory not found" });
-    if (name) sub.name = name;
-    if (categoryId) sub.category = categoryId;
-
-    if (req.file && req.file.buffer) {
-      const uploadResult = await new Promise((resolve, reject) => {
-        const stream = cloudinary.uploader.upload_stream(
-          { folder: "restaurant_menu/subcategories" },
-          (error, result) => {
-            if (error) return reject(error);
-            resolve(result);
-          }
-        );
-        stream.end(req.file.buffer);
-      });
-      sub.image = uploadResult.secure_url;
-    }
-
-    await sub.save();
-    res.json(sub);
-  } catch (e) {
-    res.status(500).json({ message: e.message });
-  }
-};
-
-export const deleteSubcategory = async (req, res) => {
-  try {
-    const { id } = req.params;
-    const dishCount = await Dish.countDocuments({ subcategory: id });
-    if (dishCount > 0) return res.status(400).json({ message: "Delete dishes first" });
-    await Subcategory.findByIdAndDelete(id);
     res.json({ success: true });
   } catch (e) {
     res.status(500).json({ message: e.message });
@@ -176,7 +115,7 @@ export const deleteSubcategory = async (req, res) => {
 export const listDishes = async (req, res) => {
   try {
     const dishes = await Dish.find()
-      .populate({ path: "subcategory", populate: { path: "category" } })
+      .populate("category")
       .sort({ createdAt: -1 });
     res.json(dishes);
   } catch (e) {
@@ -186,9 +125,9 @@ export const listDishes = async (req, res) => {
 
 export const createDish = async (req, res) => {
   try {
-    const { name, price, description, stars, subcategoryId } = req.body;
-    if (!name || price === undefined || !subcategoryId) {
-      return res.status(400).json({ message: "name, price, subcategoryId are required" });
+    const { name, price, description, stars, category } = req.body;
+    if (!name || price === undefined || !category) {
+      return res.status(400).json({ message: "name, price, category are required" });
     }
     if (!req.file || !req.file.buffer) return res.status(400).json({ message: "image is required" });
 
@@ -207,10 +146,10 @@ export const createDish = async (req, res) => {
       name,
       price,
       description,
-      stars,
+      stars: stars || 0,
       image: uploadResult.secure_url,
       imagePublicId: uploadResult.public_id,
-      subcategory: subcategoryId,
+      category,
     });
 
     res.status(201).json(dish);
@@ -222,7 +161,7 @@ export const createDish = async (req, res) => {
 export const updateDish = async (req, res) => {
   try {
     const { id } = req.params;
-    const { name, price, description, stars, subcategoryId } = req.body;
+    const { name, price, description, stars, category } = req.body;
     const dish = await Dish.findById(id);
     if (!dish) return res.status(404).json({ message: "Dish not found" });
 
@@ -230,9 +169,19 @@ export const updateDish = async (req, res) => {
     if (price !== undefined) dish.price = price;
     if (description !== undefined) dish.description = description;
     if (stars !== undefined) dish.stars = stars;
-    if (subcategoryId) dish.subcategory = subcategoryId;
+    if (category) dish.category = category;
 
     if (req.file && req.file.buffer) {
+      // Delete old image from Cloudinary if it exists
+      if (dish.imagePublicId) {
+        try {
+          await cloudinary.uploader.destroy(dish.imagePublicId);
+        } catch (e) {
+          console.log("Could not delete old image from Cloudinary:", e);
+        }
+      }
+
+      // Upload new image
       const uploadResult = await new Promise((resolve, reject) => {
         const stream = cloudinary.uploader.upload_stream(
           { folder: "restaurant_menu/dishes" },
@@ -271,15 +220,20 @@ export const deleteDish = async (req, res) => {
   }
 };
 
-// NESTED POPULATION: Category -> Subcategory -> Dish
+// Get full menu organized by categories
 export const getFullMenu = async (req, res) => {
   try {
-    const categories = await Category.find()
-      .populate({
-        path: "subcategories",
-        populate: { path: "dishes" },
-      });
-    res.json(categories);
+    const categories = await Category.find().sort({ createdAt: -1 });
+    const menu = await Promise.all(
+      categories.map(async (cat) => {
+        const dishes = await Dish.find({ category: cat._id }).sort({ createdAt: -1 });
+        return {
+          ...cat.toObject(),
+          dishes,
+        };
+      })
+    );
+    res.json(menu);
   } catch (e) {
     res.status(500).json({ message: e.message });
   }
