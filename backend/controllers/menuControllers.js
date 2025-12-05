@@ -19,7 +19,6 @@ export const listCategories = async (req, res) => {
     const categories = await Category.find().sort({ createdAt: -1 });
     res.json(categories);
   } catch (e) {
-    console.error('createSubCategory - unexpected error:', e);
     res.status(500).json({ message: e.message, error: {} });
   }
 };
@@ -56,7 +55,7 @@ export const createCategory = async (req, res) => {
           await cloudinary.uploader.destroy(uploadResult.public_id);
         }
       } catch (destroyErr) {
-        console.error('Failed to cleanup Cloudinary image after DB error:', destroyErr);
+        // Cleanup error - continue anyway
       }
       // If duplicate slug (null or same), return a clear error
       if (dbErr && dbErr.code === 11000) {
@@ -179,7 +178,7 @@ export const updateDish = async (req, res) => {
         try {
           await cloudinary.uploader.destroy(dish.imagePublicId);
         } catch (e) {
-          console.log("Could not delete old image from Cloudinary:", e);
+          // Could not delete old image - continue
         }
       }
 
@@ -264,7 +263,7 @@ export const createSubCategory = async (req, res) => {
           await cloudinary.uploader.destroy(uploadResult.public_id);
         }
       } catch (destroyErr) {
-        console.error('Failed to cleanup Cloudinary image after DB error:', destroyErr);
+        // Cleanup error - continue anyway
       }
       // If duplicate slug (null or same), return a clear error
       if (dbErr && dbErr.code === 11000) {

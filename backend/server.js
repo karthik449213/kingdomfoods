@@ -5,6 +5,7 @@ dotenv.config();
 
 import express from "express";
 import cors from "cors";
+import helmet from "helmet";
 import connectDB from "./config/db.js";
 import authRoutes from "./routes/authRoutes.js";
 import dashboardRoutes from "./routes/dashboard.js";
@@ -14,7 +15,12 @@ import menuRoutes from "./routes/menuRoutes.js";
 const app = express();
 
 // Middleware
-app.use(cors());
+// Restrict CORS in production; allow all in development for convenience
+const corsOptions = process.env.NODE_ENV === 'production'
+  ? { origin: process.env.FRONTEND_ORIGIN || 'https://your-production-domain.com' }
+  : {};
+app.use(cors(corsOptions));
+app.use(helmet());
 app.use(express.json());
 app.use("/api/auth", authRoutes);
 app.use("/dashboard", dashboardRoutes);
@@ -33,7 +39,6 @@ app.get("/", (req, res) => {
 
 // Global error handler to surface unexpected errors during request processing
 app.use((err, req, res, next) => {
-  console.error('Unhandled error:', err);
   res.status(500).json({ message: err && err.message ? err.message : 'Internal Server Error', error: {} });
 });
 
