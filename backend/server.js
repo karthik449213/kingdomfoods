@@ -31,6 +31,12 @@ app.get("/", (req, res) => {
   res.json("API is running...");
 });
 
+// Global error handler to surface unexpected errors during request processing
+app.use((err, req, res, next) => {
+  console.error('Unhandled error:', err);
+  res.status(500).json({ message: err && err.message ? err.message : 'Internal Server Error', error: {} });
+});
+
 // Server Start
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
