@@ -24,7 +24,10 @@ const subCategorySchema = new mongoose.Schema({
   timestamps: true,
 });
 
-
+// PERFORMANCE: Add indexes for frequently queried fields
+// Note: unique: true already creates an index on slug
+subCategorySchema.index({ category: 1 });
+subCategorySchema.index({ createdAt: -1 });
 
 const SubCategory = mongoose.model('SubCategory', subCategorySchema);
 

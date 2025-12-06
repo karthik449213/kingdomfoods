@@ -9,6 +9,10 @@ const CategorySchema = new mongoose.Schema(
   { timestamps: true }
 );
 
+// PERFORMANCE: Add indexes for frequently queried fields
+// Note: unique: true already creates an index on slug, so just add createdAt
+CategorySchema.index({ createdAt: -1 });
+
 // Helpful virtual population if needed later
 CategorySchema.virtual("subcategories", {
   ref: "Subcategory",

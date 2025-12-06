@@ -32,15 +32,15 @@ export const createCategory = async (req, res) => {
       return res.status(400).json({ message: "image is required" });
     }
 
-    const uploadResult = await new Promise((resolve, reject) => {
-      const stream = cloudinary.uploader.upload_stream(
-        { folder: "restaurant_menu/categories" },
-        (error, result) => {
-          if (error) return reject(error);
-          resolve(result);
-        }
-      );
-      stream.end(req.file.buffer);
+    // Validate file size
+    if (req.file.size > 5 * 1024 * 1024) {
+      return res.status(413).json({ message: "Image too large (max 5MB)" });
+    }
+
+    const uploadResult = await cloudinary.uploader.upload_buffer(req.file.buffer, {
+      folder: "restaurant_menu/categories",
+      resource_type: 'auto',
+      timeout: 30000
     });
 
     // generate slug and create category
@@ -78,15 +78,15 @@ export const updateCategory = async (req, res) => {
     if (name) category.name = name;
 
     if (req.file && req.file.buffer) {
-      const uploadResult = await new Promise((resolve, reject) => {
-        const stream = cloudinary.uploader.upload_stream(
-          { folder: "restaurant_menu/categories" },
-          (error, result) => {
-            if (error) return reject(error);
-            resolve(result);
-          }
-        );
-        stream.end(req.file.buffer);
+      // Validate file size
+      if (req.file.size > 5 * 1024 * 1024) {
+        return res.status(413).json({ message: "Image too large (max 5MB)" });
+      }
+
+      const uploadResult = await cloudinary.uploader.upload_buffer(req.file.buffer, {
+        folder: "restaurant_menu/categories",
+        resource_type: 'auto',
+        timeout: 30000
       });
       category.image = uploadResult.secure_url;
     }
@@ -115,10 +115,29 @@ export const deleteCategory = async (req, res) => {
 // DISH CONTROLLERS
 export const listDishes = async (req, res) => {
   try {
-    const dishes = await Dish.find()
-      .populate("subCategory")
-      .sort({ createdAt: -1 });
-    res.json(dishes);
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 20;
+    const skip = (page - 1) * limit;
+
+    const [dishes, total] = await Promise.all([
+      Dish.find()
+        .populate("subCategory", "name slug")
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limit)
+        .lean(),
+      Dish.countDocuments()
+    ]);
+
+    res.json({
+      dishes,
+      pagination: {
+        page,
+        limit,
+        total,
+        pages: Math.ceil(total / limit)
+      }
+    });
   } catch (e) {
     res.status(500).json({ message: e.message });
   }
@@ -127,20 +146,22 @@ export const listDishes = async (req, res) => {
 export const createDish = async (req, res) => {
   try {
     const { name, price, description, stars, subCategory } = req.body;
-    if (!name || price === undefined || !subCategory) {
-      return res.status(400).json({ message: "name, price, subCategory are required" });
+    if (!name || price === undefined) {
+      return res.status(400).json({ message: "name and price are required" });
     }
-    if (!req.file || !req.file.buffer) return res.status(400).json({ message: "image is required" });
+    if (!req.file || !req.file.buffer) {
+      return res.status(400).json({ message: "image is required" });
+    }
 
-    const uploadResult = await new Promise((resolve, reject) => {
-      const stream = cloudinary.uploader.upload_stream(
-        { folder: "restaurant_menu/dishes" },
-        (error, result) => {
-          if (error) return reject(error);
-          resolve(result);
-        }
-      );
-      stream.end(req.file.buffer);
+    // Validate file size (max 5MB)
+    if (req.file.size > 5 * 1024 * 1024) {
+      return res.status(413).json({ message: "Image too large (max 5MB)" });
+    }
+
+    const uploadResult = await cloudinary.uploader.upload_buffer(req.file.buffer, {
+      folder: "restaurant_menu/dishes",
+      resource_type: 'auto',
+      timeout: 30000
     });
 
     const dish = await Dish.create({
@@ -173,28 +194,28 @@ export const updateDish = async (req, res) => {
     if (subCategory) dish.subCategory = subCategory;
 
     if (req.file && req.file.buffer) {
-      // Delete old image from Cloudinary if it exists
-      if (dish.imagePublicId) {
-        try {
-          await cloudinary.uploader.destroy(dish.imagePublicId);
-        } catch (e) {
-          // Could not delete old image - continue
-        }
+      // Validate file size
+      if (req.file.size > 5 * 1024 * 1024) {
+        return res.status(413).json({ message: "Image too large (max 5MB)" });
       }
 
+      const oldImageId = dish.imagePublicId;
+
       // Upload new image
-      const uploadResult = await new Promise((resolve, reject) => {
-        const stream = cloudinary.uploader.upload_stream(
-          { folder: "restaurant_menu/dishes" },
-          (error, result) => {
-            if (error) return reject(error);
-            resolve(result);
-          }
-        );
-        stream.end(req.file.buffer);
+      const uploadResult = await cloudinary.uploader.upload_buffer(req.file.buffer, {
+        folder: "restaurant_menu/dishes",
+        resource_type: 'auto',
+        timeout: 30000
       });
       dish.image = uploadResult.secure_url;
       dish.imagePublicId = uploadResult.public_id;
+
+      // Delete old image in background (don't wait for it)
+      if (oldImageId) {
+        cloudinary.uploader.destroy(oldImageId).catch(err => {
+          console.error('Background cleanup error:', err);
+        });
+      }
     }
 
     await dish.save();
@@ -240,15 +261,15 @@ export const createSubCategory = async (req, res) => {
       return res.status(400).json({ message: "image is required" });
     }
 
-    const uploadResult = await new Promise((resolve, reject) => {
-      const stream = cloudinary.uploader.upload_stream(
-        { folder: "restaurant_menu/subcategories" },
-        (error, result) => {
-          if (error) return reject(error);
-          resolve(result);
-        }
-      );
-      stream.end(req.file.buffer);
+    // Validate file size
+    if (req.file.size > 5 * 1024 * 1024) {
+      return res.status(413).json({ message: "Image too large (max 5MB)" });
+    }
+
+    const uploadResult = await cloudinary.uploader.upload_buffer(req.file.buffer, {
+      folder: "restaurant_menu/subcategories",
+      resource_type: 'auto',
+      timeout: 30000
     });
 
     // generate slug and create subcategory
@@ -287,15 +308,15 @@ export const updateSubCategory = async (req, res) => {
     if (category) subCategory.category = category;
 
     if (req.file && req.file.buffer) {
-      const uploadResult = await new Promise((resolve, reject) => {
-        const stream = cloudinary.uploader.upload_stream(
-          { folder: "restaurant_menu/subcategories" },
-          (error, result) => {
-            if (error) return reject(error);
-            resolve(result);
-          }
-        );
-        stream.end(req.file.buffer);
+      // Validate file size
+      if (req.file.size > 5 * 1024 * 1024) {
+        return res.status(413).json({ message: "Image too large (max 5MB)" });
+      }
+
+      const uploadResult = await cloudinary.uploader.upload_buffer(req.file.buffer, {
+        folder: "restaurant_menu/subcategories",
+        resource_type: 'auto',
+        timeout: 30000
       });
       subCategory.image = uploadResult.secure_url;
     }
@@ -322,28 +343,141 @@ export const deleteSubCategory = async (req, res) => {
 };
 
 // Get full menu organized by categories and subcategories
+// OPTIMIZED: Reduced N+1 queries to just 3 queries total
 export const getFullMenu = async (req, res) => {
   try {
-    const categories = await Category.find().sort({ createdAt: -1 });
-    const menu = await Promise.all(
-      categories.map(async (cat) => {
-        const subCategories = await SubCategory.find({ category: cat._id }).sort({ createdAt: -1 });
-        const subCategoriesWithDishes = await Promise.all(
-          subCategories.map(async (subCat) => {
-            const dishes = await Dish.find({ subCategory: subCat._id }).sort({ createdAt: -1 });
-            return {
-              ...subCat.toObject(),
-              dishes,
-            };
-          })
-        );
-        return {
-          ...cat.toObject(),
-          subCategories: subCategoriesWithDishes,
-        };
-      })
-    );
+    // Fetch all data in parallel with just 3 queries
+    const [categories, subCategories, dishes] = await Promise.all([
+      Category.find().sort({ createdAt: -1 }).lean(),
+      SubCategory.find().populate('category', 'name slug').sort({ createdAt: -1 }).lean(),
+      Dish.find().populate('subCategory', 'name slug').sort({ createdAt: -1 }).lean()
+    ]);
+
+    // Organize data in-memory (very fast)
+    const menu = categories.map(cat => ({
+      ...cat,
+      subCategories: subCategories
+        .filter(subCat => subCat.category && subCat.category._id.equals(cat._id))
+        .map(subCat => ({
+          ...subCat,
+          dishes: dishes.filter(dish => 
+            dish.subCategory && dish.subCategory._id.equals(subCat._id)
+          )
+        }))
+    }));
+    
     res.json(menu);
+  } catch (e) {
+    res.status(500).json({ message: e.message, error: {} });
+  }
+};
+
+// Get dishes with no subcategory (standalone dishes)
+export const getDishesByNoSubcategory = async (req, res) => {
+  try {
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 20;
+    const skip = (page - 1) * limit;
+
+    const [dishes, total] = await Promise.all([
+      Dish.find({ subCategory: null })
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limit)
+        .lean(),
+      Dish.countDocuments({ subCategory: null })
+    ]);
+
+    res.json({
+      dishes,
+      pagination: {
+        page,
+        limit,
+        total,
+        pages: Math.ceil(total / limit),
+        type: 'standalone'
+      }
+    });
+  } catch (e) {
+    res.status(500).json({ message: e.message });
+  }
+};
+
+// Get dishes organized by subcategory (with subcategory filtering)
+export const getDishesBySubcategory = async (req, res) => {
+  try {
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 20;
+    const skip = (page - 1) * limit;
+
+    const [dishes, total] = await Promise.all([
+      Dish.find({ subCategory: { $ne: null } })
+        .populate('subCategory', 'name slug category')
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limit)
+        .lean(),
+      Dish.countDocuments({ subCategory: { $ne: null } })
+    ]);
+
+    res.json({
+      dishes,
+      pagination: {
+        page,
+        limit,
+        total,
+        pages: Math.ceil(total / limit),
+        type: 'categorized'
+      }
+    });
+  } catch (e) {
+    res.status(500).json({ message: e.message });
+  }
+};
+
+// Get all dishes (both with and without subcategory)
+export const getAllDishesOrganized = async (req, res) => {
+  try {
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 20;
+    const skip = (page - 1) * limit;
+
+    const [standalondDishes, categorizedDishes, standaloneTotal, categorizedTotal] = await Promise.all([
+      Dish.find({ subCategory: null })
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limit)
+        .lean(),
+      Dish.find({ subCategory: { $ne: null } })
+        .populate('subCategory', 'name slug category')
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limit)
+        .lean(),
+      Dish.countDocuments({ subCategory: null }),
+      Dish.countDocuments({ subCategory: { $ne: null } })
+    ]);
+
+    res.json({
+      standalone: {
+        dishes: standalondDishes,
+        total: standaloneTotal,
+        pagination: {
+          page,
+          limit,
+          pages: Math.ceil(standaloneTotal / limit)
+        }
+      },
+      categorized: {
+        dishes: categorizedDishes,
+        total: categorizedTotal,
+        pagination: {
+          page,
+          limit,
+          pages: Math.ceil(categorizedTotal / limit)
+        }
+      }
+    });
   } catch (e) {
     res.status(500).json({ message: e.message });
   }

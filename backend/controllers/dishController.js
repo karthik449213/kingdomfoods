@@ -32,8 +32,15 @@ export const addDish = async (req, res) => {
       return res.status(400).json({ message: "Image is required" });
     }
 
-    const uploadResult = await cloudinary.uploader.upload(req.file.path, {
+    // Validate file size (max 5MB)
+    if (req.file.size > 5 * 1024 * 1024) {
+      return res.status(413).json({ message: "Image too large (max 5MB)" });
+    }
+
+    const uploadResult = await cloudinary.uploader.upload_buffer(req.file.buffer, {
       folder: "restaurant_menu",
+      resource_type: 'auto',
+      timeout: 30000
     });
 
     const dish = new Dish({
@@ -72,15 +79,28 @@ export const updateDish = async (req, res) => {
 
     // If new image uploaded
     if (req.file) {
-      // delete old image
-      await cloudinary.uploader.destroy(dish.imagePublicId);
+      // Validate file size
+      if (req.file.size > 5 * 1024 * 1024) {
+        return res.status(413).json({ message: "Image too large (max 5MB)" });
+      }
 
-      const uploadResult = await cloudinary.uploader.upload(req.file.path, {
+      const oldImageId = dish.imagePublicId;
+
+      const uploadResult = await cloudinary.uploader.upload_buffer(req.file.buffer, {
         folder: "restaurant_menu",
+        resource_type: 'auto',
+        timeout: 30000
       });
 
       dish.image = uploadResult.secure_url;
       dish.imagePublicId = uploadResult.public_id;
+
+      // Delete old image in background (fire and forget)
+      if (oldImageId) {
+        cloudinary.uploader.destroy(oldImageId).catch(err => {
+          console.error('Background cleanup error:', err);
+        });
+      }
     }
 
     await dish.save();

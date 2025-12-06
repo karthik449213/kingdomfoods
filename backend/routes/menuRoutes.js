@@ -15,6 +15,9 @@ import {
   updateDish,
   deleteDish,
   getFullMenu,
+  getDishesByNoSubcategory,
+  getDishesBySubcategory,
+  getAllDishesOrganized,
 } from "../controllers/menuControllers.js";
 
 const router = express.Router();
@@ -23,6 +26,9 @@ const router = express.Router();
 router.get("/full", getFullMenu);
 router.get("/categories", listCategories);
 router.get("/dishes", listDishes);
+router.get("/dishes/standalone/all", getDishesByNoSubcategory);
+router.get("/dishes/categorized/all", getDishesBySubcategory);
+router.get("/dishes/organized/all", getAllDishesOrganized);
 router.get("/subcategories", listSubCategories);
 
 // Admin protected routes - Categories
