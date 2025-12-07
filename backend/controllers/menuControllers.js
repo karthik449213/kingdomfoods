@@ -98,6 +98,7 @@ export const updateCategory = async (req, res) => {
   }
 };
 
+
 export const deleteCategory = async (req, res) => {
   try {
     const { id } = req.params;

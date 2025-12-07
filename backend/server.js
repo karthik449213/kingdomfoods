@@ -12,6 +12,7 @@ import dashboardRoutes from "./routes/dashboard.js";
 import categoryRoutes from "./routes/categoryRoutes.js";
 import dishRoutes from "./routes/dishRoutes.js";
 import menuRoutes from "./routes/menuRoutes.js";
+import testimonialRoutes from "./routes/testimonialRoutes.js";
 
 const app = express();
 
@@ -30,6 +31,7 @@ app.use("/api/categories", categoryRoutes);
 
 app.use("/menu", dishRoutes);
 app.use("/api/menu", menuRoutes);
+app.use("/api/testimonials", testimonialRoutes);
 
 // Test Route
 app.get("/", (req, res) => {
