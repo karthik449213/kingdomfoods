@@ -9,6 +9,8 @@ const DishSchema = new mongoose.Schema(
     image: { type: String, required: true }, // Cloudinary URL
     imagePublicId: { type: String },
     subCategory: { type: mongoose.Schema.Types.ObjectId, ref: "SubCategory", required: false, default: null },
+    // Optional category reference for standalone dishes (no subCategory)
+    category: { type: mongoose.Schema.Types.ObjectId, ref: "Category", required: false, default: null },
   },
   { timestamps: true }
 );

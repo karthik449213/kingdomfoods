@@ -2,6 +2,7 @@ import Category from "../models/category.model.js";
 import SubCategory from "../models/SubCategory.js";
 import Dish from "../models/dish.model.js";
 import cloudinary from "../config/cloudinary.js";
+import { Readable } from "stream";
 
 // Helper to generate URL-friendly slug from name
 const generateSlug = (name) => {
@@ -11,6 +12,22 @@ const generateSlug = (name) => {
     .replace(/[^\w\s-]/g, '') // Remove special characters
     .replace(/[\s_-]+/g, '-') // Replace spaces and underscores with hyphens
     .replace(/^-+|-+$/g, ''); // Remove leading/trailing hyphens
+};
+
+// Helper function to upload buffer to Cloudinary using stream
+const uploadBufferToCloudinary = (buffer, options = {}) => {
+  return new Promise((resolve, reject) => {
+    const stream = cloudinary.uploader.upload_stream(options, (error, result) => {
+      if (error) {
+        reject(error);
+      } else {
+        resolve(result);
+      }
+    });
+
+    // Convert buffer to readable stream and pipe to Cloudinary
+    Readable.from(buffer).pipe(stream);
+  });
 };
 
 // CATEGORY CONTROLLERS
@@ -37,7 +54,7 @@ export const createCategory = async (req, res) => {
       return res.status(413).json({ message: "Image too large (max 5MB)" });
     }
 
-    const uploadResult = await cloudinary.uploader.upload_buffer(req.file.buffer, {
+    const uploadResult = await uploadBufferToCloudinary(req.file.buffer, {
       folder: "restaurant_menu/categories",
       resource_type: 'auto',
       timeout: 30000
@@ -83,7 +100,7 @@ export const updateCategory = async (req, res) => {
         return res.status(413).json({ message: "Image too large (max 5MB)" });
       }
 
-      const uploadResult = await cloudinary.uploader.upload_buffer(req.file.buffer, {
+      const uploadResult = await uploadBufferToCloudinary(req.file.buffer, {
         folder: "restaurant_menu/categories",
         resource_type: 'auto',
         timeout: 30000
@@ -123,6 +140,7 @@ export const listDishes = async (req, res) => {
     const [dishes, total] = await Promise.all([
       Dish.find()
         .populate("subCategory", "name slug")
+        .populate("category", "name slug")
         .sort({ createdAt: -1 })
         .skip(skip)
         .limit(limit)
@@ -146,7 +164,7 @@ export const listDishes = async (req, res) => {
 
 export const createDish = async (req, res) => {
   try {
-    const { name, price, description, stars, subCategory } = req.body;
+    const { name, price, description, stars, subCategory, category } = req.body;
     if (!name || price === undefined) {
       return res.status(400).json({ message: "name and price are required" });
     }
@@ -159,7 +177,7 @@ export const createDish = async (req, res) => {
       return res.status(413).json({ message: "Image too large (max 5MB)" });
     }
 
-    const uploadResult = await cloudinary.uploader.upload_buffer(req.file.buffer, {
+    const uploadResult = await uploadBufferToCloudinary(req.file.buffer, {
       folder: "restaurant_menu/dishes",
       resource_type: 'auto',
       timeout: 30000
@@ -172,7 +190,8 @@ export const createDish = async (req, res) => {
       stars: stars || 0,
       image: uploadResult.secure_url,
       imagePublicId: uploadResult.public_id,
-      subCategory,
+      subCategory: subCategory || null,
+      category: category || null,
     });
 
     res.status(201).json(dish);
@@ -184,7 +203,7 @@ export const createDish = async (req, res) => {
 export const updateDish = async (req, res) => {
   try {
     const { id } = req.params;
-    const { name, price, description, stars, subCategory } = req.body;
+    const { name, price, description, stars, subCategory, category } = req.body;
     const dish = await Dish.findById(id);
     if (!dish) return res.status(404).json({ message: "Dish not found" });
 
@@ -192,7 +211,9 @@ export const updateDish = async (req, res) => {
     if (price !== undefined) dish.price = price;
     if (description !== undefined) dish.description = description;
     if (stars !== undefined) dish.stars = stars;
-    if (subCategory) dish.subCategory = subCategory;
+    // allow clearing subCategory by passing empty string or null
+    if (subCategory !== undefined) dish.subCategory = subCategory || null;
+    if (category !== undefined) dish.category = category || null;
 
     if (req.file && req.file.buffer) {
       // Validate file size
@@ -203,7 +224,7 @@ export const updateDish = async (req, res) => {
       const oldImageId = dish.imagePublicId;
 
       // Upload new image
-      const uploadResult = await cloudinary.uploader.upload_buffer(req.file.buffer, {
+      const uploadResult = await uploadBufferToCloudinary(req.file.buffer, {
         folder: "restaurant_menu/dishes",
         resource_type: 'auto',
         timeout: 30000
@@ -267,7 +288,7 @@ export const createSubCategory = async (req, res) => {
       return res.status(413).json({ message: "Image too large (max 5MB)" });
     }
 
-    const uploadResult = await cloudinary.uploader.upload_buffer(req.file.buffer, {
+    const uploadResult = await uploadBufferToCloudinary(req.file.buffer, {
       folder: "restaurant_menu/subcategories",
       resource_type: 'auto',
       timeout: 30000
@@ -314,7 +335,7 @@ export const updateSubCategory = async (req, res) => {
         return res.status(413).json({ message: "Image too large (max 5MB)" });
       }
 
-      const uploadResult = await cloudinary.uploader.upload_buffer(req.file.buffer, {
+      const uploadResult = await uploadBufferToCloudinary(req.file.buffer, {
         folder: "restaurant_menu/subcategories",
         resource_type: 'auto',
         timeout: 30000
@@ -343,29 +364,35 @@ export const deleteSubCategory = async (req, res) => {
   }
 };
 
-// Get full menu organized by categories and subcategories
-// OPTIMIZED: Reduced N+1 queries to just 3 queries total
+// Get full menu organized by categories and subcategories (simplified - only dishes with subcategories)
 export const getFullMenu = async (req, res) => {
   try {
     // Fetch all data in parallel with just 3 queries
     const [categories, subCategories, dishes] = await Promise.all([
       Category.find().sort({ createdAt: -1 }).lean(),
       SubCategory.find().populate('category', 'name slug').sort({ createdAt: -1 }).lean(),
-      Dish.find().populate('subCategory', 'name slug').sort({ createdAt: -1 }).lean()
+      Dish.find({ subCategory: { $ne: null } })  // Only dishes with subcategories
+        .populate({ path: 'subCategory', select: 'name slug category', populate: { path: 'category', select: 'name slug' } })
+        .sort({ createdAt: -1 })
+        .lean()
     ]);
 
-    // Organize data in-memory (very fast)
-    const menu = categories.map(cat => ({
-      ...cat,
-      subCategories: subCategories
+    // Organize data in-memory: categories > subcategories > dishes
+    const menu = categories.map(cat => {
+      const subs = subCategories
         .filter(subCat => subCat.category && subCat.category._id.equals(cat._id))
         .map(subCat => ({
           ...subCat,
           dishes: dishes.filter(dish => 
             dish.subCategory && dish.subCategory._id.equals(subCat._id)
           )
-        }))
-    }));
+        }));
+
+      return {
+        ...cat,
+        subCategories: subs
+      };
+    });
     
     res.json(menu);
   } catch (e) {
@@ -382,6 +409,7 @@ export const getDishesByNoSubcategory = async (req, res) => {
 
     const [dishes, total] = await Promise.all([
       Dish.find({ subCategory: null })
+        .populate('category', 'name slug')
         .sort({ createdAt: -1 })
         .skip(skip)
         .limit(limit)
@@ -413,7 +441,8 @@ export const getDishesBySubcategory = async (req, res) => {
 
     const [dishes, total] = await Promise.all([
       Dish.find({ subCategory: { $ne: null } })
-        .populate('subCategory', 'name slug category')
+        .populate({ path: 'subCategory', select: 'name slug category', populate: { path: 'category', select: 'name slug' } })
+        .populate('category', 'name slug')
         .sort({ createdAt: -1 })
         .skip(skip)
         .limit(limit)
@@ -445,12 +474,14 @@ export const getAllDishesOrganized = async (req, res) => {
 
     const [standalondDishes, categorizedDishes, standaloneTotal, categorizedTotal] = await Promise.all([
       Dish.find({ subCategory: null })
+        .populate('category', 'name slug')
         .sort({ createdAt: -1 })
         .skip(skip)
         .limit(limit)
         .lean(),
       Dish.find({ subCategory: { $ne: null } })
-        .populate('subCategory', 'name slug category')
+        .populate({ path: 'subCategory', select: 'name slug category', populate: { path: 'category', select: 'name slug' } })
+        .populate('category', 'name slug')
         .sort({ createdAt: -1 })
         .skip(skip)
         .limit(limit)
