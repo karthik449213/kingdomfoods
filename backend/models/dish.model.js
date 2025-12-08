@@ -6,7 +6,7 @@ const DishSchema = new mongoose.Schema(
     price: { type: Number, required: true, min: 0 },
     description: { type: String, default: "" },
     stars: { type: Number, default: 0, min: 0, max: 5 },
-    image: { type: String, required: true }, // Cloudinary URL
+    image: { type: String, required: false, default: null }, // Cloudinary URL - now optional
     imagePublicId: { type: String },
     subCategory: { type: mongoose.Schema.Types.ObjectId, ref: "SubCategory", required: false, default: null },
   },

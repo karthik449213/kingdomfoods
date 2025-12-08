@@ -1,7 +1,7 @@
 import Category from "../models/category.model.js";
 import SubCategory from "../models/SubCategory.js";
 import Dish from "../models/dish.model.js";
-import cloudinary from "../config/cloudinary.js";
+import cloudinary, { uploadBuffer } from "../config/cloudinary.js";
 
 // Helper to generate URL-friendly slug from name
 const generateSlug = (name) => {
@@ -37,7 +37,7 @@ export const createCategory = async (req, res) => {
       return res.status(413).json({ message: "Image too large (max 5MB)" });
     }
 
-    const uploadResult = await cloudinary.uploader.upload_buffer(req.file.buffer, {
+    const uploadResult = await uploadBuffer(req.file.buffer, {
       folder: "restaurant_menu/categories",
       resource_type: 'auto',
       timeout: 30000
@@ -83,7 +83,7 @@ export const updateCategory = async (req, res) => {
         return res.status(413).json({ message: "Image too large (max 5MB)" });
       }
 
-      const uploadResult = await cloudinary.uploader.upload_buffer(req.file.buffer, {
+      const uploadResult = await uploadBuffer(req.file.buffer, {
         folder: "restaurant_menu/categories",
         resource_type: 'auto',
         timeout: 30000
@@ -159,7 +159,7 @@ export const createDish = async (req, res) => {
       return res.status(413).json({ message: "Image too large (max 5MB)" });
     }
 
-    const uploadResult = await cloudinary.uploader.upload_buffer(req.file.buffer, {
+    const uploadResult = await uploadBuffer(req.file.buffer, {
       folder: "restaurant_menu/dishes",
       resource_type: 'auto',
       timeout: 30000
@@ -203,7 +203,7 @@ export const updateDish = async (req, res) => {
       const oldImageId = dish.imagePublicId;
 
       // Upload new image
-      const uploadResult = await cloudinary.uploader.upload_buffer(req.file.buffer, {
+      const uploadResult = await uploadBuffer(req.file.buffer, {
         folder: "restaurant_menu/dishes",
         resource_type: 'auto',
         timeout: 30000
@@ -267,7 +267,7 @@ export const createSubCategory = async (req, res) => {
       return res.status(413).json({ message: "Image too large (max 5MB)" });
     }
 
-    const uploadResult = await cloudinary.uploader.upload_buffer(req.file.buffer, {
+    const uploadResult = await uploadBuffer(req.file.buffer, {
       folder: "restaurant_menu/subcategories",
       resource_type: 'auto',
       timeout: 30000
@@ -314,7 +314,7 @@ export const updateSubCategory = async (req, res) => {
         return res.status(413).json({ message: "Image too large (max 5MB)" });
       }
 
-      const uploadResult = await cloudinary.uploader.upload_buffer(req.file.buffer, {
+      const uploadResult = await uploadBuffer(req.file.buffer, {
         folder: "restaurant_menu/subcategories",
         resource_type: 'auto',
         timeout: 30000
@@ -478,6 +478,54 @@ export const getAllDishesOrganized = async (req, res) => {
           pages: Math.ceil(categorizedTotal / limit)
         }
       }
+    });
+  } catch (e) {
+    res.status(500).json({ message: e.message });
+  }
+};
+
+// Get dishes organized by Category > SubCategory > Dishes
+export const getOrganizedMenu = async (req, res) => {
+  try {
+    const categories = await Category.find().sort({ createdAt: 1 });
+    
+    const organizedMenu = [];
+    
+    for (const category of categories) {
+      const subCategories = await SubCategory.find({ category: category._id });
+      
+      const categoryData = {
+        _id: category._id,
+        name: category.name,
+        slug: category.slug,
+        image: category.image,
+        subCategories: []
+      };
+      
+      for (const subCategory of subCategories) {
+        const dishes = await Dish.find({ subCategory: subCategory._id });
+        
+        categoryData.subCategories.push({
+          _id: subCategory._id,
+          name: subCategory.name,
+          slug: subCategory.slug,
+          image: subCategory.image,
+          dishCount: dishes.length,
+          dishes
+        });
+      }
+      
+      // Only add category if it has subcategories
+      if (categoryData.subCategories.length > 0) {
+        organizedMenu.push(categoryData);
+      }
+    }
+    
+    res.json({
+      success: true,
+      total: organizedMenu.reduce((sum, cat) => sum + cat.subCategories.reduce((subSum, sub) => subSum + sub.dishCount, 0), 0),
+      categoriesCount: organizedMenu.length,
+      data: organizedMenu
     });
   } catch (e) {
     res.status(500).json({ message: e.message });

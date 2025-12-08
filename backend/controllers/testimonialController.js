@@ -1,5 +1,5 @@
 import Testimonial from '../models/Testimonial.js';
-import cloudinary from '../config/cloudinary.js';
+import cloudinary, { uploadBuffer } from "../config/cloudinary.js";
 
 // Get all approved testimonials
 export const getApprovedTestimonials = async (req, res) => {
@@ -48,7 +48,7 @@ export const createTestimonial = async (req, res) => {
       }
 
       try {
-        const uploadResult = await cloudinary.uploader.upload_buffer(req.file.buffer, {
+        const uploadResult = await uploadBuffer(req.file.buffer, {
           folder: 'restaurant_testimonials/profiles',
           resource_type: 'auto',
           timeout: 30000,
@@ -179,7 +179,7 @@ export const updateTestimonial = async (req, res) => {
 
       // Upload new image
       try {
-        const uploadResult = await cloudinary.uploader.upload_buffer(req.file.buffer, {
+        const uploadResult = await uploadBuffer(req.file.buffer, {
           folder: 'restaurant_testimonials/profiles',
           resource_type: 'auto',
           timeout: 30000,

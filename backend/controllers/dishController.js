@@ -1,5 +1,5 @@
 import Dish from "../models/Dish.js";
-import cloudinary from "../config/cloudinary.js";
+import cloudinary, { uploadBuffer } from "../config/cloudinary.js";
 
 // GET all dishes (public)
 export const getDishes = async (req, res) => {
@@ -37,8 +37,8 @@ export const addDish = async (req, res) => {
       return res.status(413).json({ message: "Image too large (max 5MB)" });
     }
 
-    const uploadResult = await cloudinary.uploader.upload_buffer(req.file.buffer, {
-      folder: "restaurant_menu",
+    const uploadResult = await uploadBuffer(req.file.buffer, {
+      folder: "restaurant_menu/dishes",
       resource_type: 'auto',
       timeout: 30000
     });
@@ -86,8 +86,8 @@ export const updateDish = async (req, res) => {
 
       const oldImageId = dish.imagePublicId;
 
-      const uploadResult = await cloudinary.uploader.upload_buffer(req.file.buffer, {
-        folder: "restaurant_menu",
+      const uploadResult = await uploadBuffer(req.file.buffer, {
+        folder: "restaurant_menu/dishes",
         resource_type: 'auto',
         timeout: 30000
       });

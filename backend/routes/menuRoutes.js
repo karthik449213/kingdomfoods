@@ -18,6 +18,7 @@ import {
   getDishesByNoSubcategory,
   getDishesBySubcategory,
   getAllDishesOrganized,
+  getOrganizedMenu,
 } from "../controllers/menuControllers.js";
 
 const router = express.Router();
@@ -29,6 +30,7 @@ router.get("/dishes", listDishes);
 router.get("/dishes/standalone/all", getDishesByNoSubcategory);
 router.get("/dishes/categorized/all", getDishesBySubcategory);
 router.get("/dishes/organized/all", getAllDishesOrganized);
+router.get("/organized", getOrganizedMenu);
 router.get("/subcategories", listSubCategories);
 
 // Admin protected routes - Categories
