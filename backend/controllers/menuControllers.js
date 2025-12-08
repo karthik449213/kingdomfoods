@@ -1,12 +1,7 @@
 import Category from "../models/category.model.js";
 import SubCategory from "../models/SubCategory.js";
 import Dish from "../models/dish.model.js";
-<<<<<<< HEAD
 import cloudinary, { uploadBuffer } from "../config/cloudinary.js";
-=======
-import cloudinary from "../config/cloudinary.js";
-import { Readable } from "stream";
->>>>>>> 9ba808fa467583c32c32b978f10441f1621f2b08
 
 // Helper to generate URL-friendly slug from name
 const generateSlug = (name) => {
@@ -58,11 +53,7 @@ export const createCategory = async (req, res) => {
       return res.status(413).json({ message: "Image too large (max 5MB)" });
     }
 
-<<<<<<< HEAD
     const uploadResult = await uploadBuffer(req.file.buffer, {
-=======
-    const uploadResult = await uploadBufferToCloudinary(req.file.buffer, {
->>>>>>> 9ba808fa467583c32c32b978f10441f1621f2b08
       folder: "restaurant_menu/categories",
       resource_type: 'auto',
       timeout: 30000
@@ -108,11 +99,7 @@ export const updateCategory = async (req, res) => {
         return res.status(413).json({ message: "Image too large (max 5MB)" });
       }
 
-<<<<<<< HEAD
       const uploadResult = await uploadBuffer(req.file.buffer, {
-=======
-      const uploadResult = await uploadBufferToCloudinary(req.file.buffer, {
->>>>>>> 9ba808fa467583c32c32b978f10441f1621f2b08
         folder: "restaurant_menu/categories",
         resource_type: 'auto',
         timeout: 30000
@@ -189,11 +176,7 @@ export const createDish = async (req, res) => {
       return res.status(413).json({ message: "Image too large (max 5MB)" });
     }
 
-<<<<<<< HEAD
     const uploadResult = await uploadBuffer(req.file.buffer, {
-=======
-    const uploadResult = await uploadBufferToCloudinary(req.file.buffer, {
->>>>>>> 9ba808fa467583c32c32b978f10441f1621f2b08
       folder: "restaurant_menu/dishes",
       resource_type: 'auto',
       timeout: 30000
@@ -240,11 +223,7 @@ export const updateDish = async (req, res) => {
       const oldImageId = dish.imagePublicId;
 
       // Upload new image
-<<<<<<< HEAD
       const uploadResult = await uploadBuffer(req.file.buffer, {
-=======
-      const uploadResult = await uploadBufferToCloudinary(req.file.buffer, {
->>>>>>> 9ba808fa467583c32c32b978f10441f1621f2b08
         folder: "restaurant_menu/dishes",
         resource_type: 'auto',
         timeout: 30000
@@ -308,11 +287,7 @@ export const createSubCategory = async (req, res) => {
       return res.status(413).json({ message: "Image too large (max 5MB)" });
     }
 
-<<<<<<< HEAD
     const uploadResult = await uploadBuffer(req.file.buffer, {
-=======
-    const uploadResult = await uploadBufferToCloudinary(req.file.buffer, {
->>>>>>> 9ba808fa467583c32c32b978f10441f1621f2b08
       folder: "restaurant_menu/subcategories",
       resource_type: 'auto',
       timeout: 30000
@@ -359,11 +334,7 @@ export const updateSubCategory = async (req, res) => {
         return res.status(413).json({ message: "Image too large (max 5MB)" });
       }
 
-<<<<<<< HEAD
       const uploadResult = await uploadBuffer(req.file.buffer, {
-=======
-      const uploadResult = await uploadBufferToCloudinary(req.file.buffer, {
->>>>>>> 9ba808fa467583c32c32b978f10441f1621f2b08
         folder: "restaurant_menu/subcategories",
         resource_type: 'auto',
         timeout: 30000
