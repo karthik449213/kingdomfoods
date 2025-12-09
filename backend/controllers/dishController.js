@@ -4,7 +4,16 @@ import cloudinary, { uploadBuffer } from "../config/cloudinary.js";
 // GET all dishes (public)
 export const getDishes = async (req, res) => {
   try {
-    const dishes = await Dish.find();
+    const dishes = await Dish.find()
+      .populate('category', 'name slug')
+      .populate({
+        path: 'subCategory',
+        select: 'name slug category',
+        populate: {
+          path: 'category',
+          select: 'name slug'
+        }
+      });
     res.json(dishes);
   } catch (error) {
     res.status(500).json({ message: "Error fetching dishes", error });
@@ -26,7 +35,7 @@ export const getDish = async (req, res) => {
 // ADD DISH (admin only)
 export const addDish = async (req, res) => {
   try {
-    const { name, price, description, category, stars } = req.body;
+    const { name, price, description, category, subCategory, stars, available } = req.body;
 
     if (!req.file) {
       return res.status(400).json({ message: "Image is required" });
@@ -48,9 +57,11 @@ export const addDish = async (req, res) => {
       price,
       description,
       category,
-      stars,
+      subCategory,
+      stars: stars !== undefined ? stars : 5,
       image: uploadResult.secure_url,
       imagePublicId: uploadResult.public_id,
+      available: available !== undefined ? available : true,
     });
 
     await dish.save();
@@ -65,7 +76,7 @@ export const addDish = async (req, res) => {
 export const updateDish = async (req, res) => {
   try {
     const dishId = req.params.id;
-    const { name, price, description, category, stars } = req.body;
+    const { name, price, description, category, subCategory, stars, available } = req.body;
 
     const dish = await Dish.findById(dishId);
     if (!dish) return res.status(404).json({ message: "Dish not found" });
@@ -75,7 +86,9 @@ export const updateDish = async (req, res) => {
     dish.price = price ?? dish.price;
     dish.description = description ?? dish.description;
     dish.category = category ?? dish.category;
+    dish.subCategory = subCategory ?? dish.subCategory;
     dish.stars = stars ?? dish.stars;
+    dish.available = available !== undefined ? available : dish.available;
 
     // If new image uploaded
     if (req.file) {
