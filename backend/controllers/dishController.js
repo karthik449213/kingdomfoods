@@ -58,7 +58,7 @@ export const addDish = async (req, res) => {
       description,
       category,
       subCategory,
-      stars: stars !== undefined ? stars : 5,
+      stars: stars !== undefined ? (isNaN(Number(stars)) ? 5 : Number(stars)) : 5,
       image: uploadResult.secure_url,
       imagePublicId: uploadResult.public_id,
       available: available !== undefined ? available : true,
@@ -87,7 +87,10 @@ export const updateDish = async (req, res) => {
     dish.description = description ?? dish.description;
     dish.category = category ?? dish.category;
     dish.subCategory = subCategory ?? dish.subCategory;
-    dish.stars = stars ?? dish.stars;
+    if (stars !== undefined) {
+      const s = Number(stars);
+      if (!isNaN(s)) dish.stars = s;
+    }
     dish.available = available !== undefined ? available : dish.available;
 
     // If new image uploaded

@@ -85,7 +85,8 @@ export const bulkUploadDishes = async (req, res) => {
           subCategory: subCategoryId, // Will be null if category is just a string name
           image: imageUrl || null, // Allow null if no image
           imagePublicId: imagePublicId || null,
-          stars: 0,
+          // Default to 5 stars for new dishes when not provided
+          stars: 5,
         });
 
         await dish.save();
@@ -199,7 +200,8 @@ export const bulkUploadWithFiles = async (req, res) => {
           subCategory: category || null,
           image: imageUrl,
           imagePublicId: imagePublicId,
-          stars: 0,
+          // Default to 5 stars for new dishes when not provided
+          stars: 5,
         });
 
         await dish.save();

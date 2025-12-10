@@ -186,7 +186,8 @@ export const createDish = async (req, res) => {
       name,
       price,
       description,
-      stars: stars || 0,
+      // default to 5 stars when not provided; parse to number if provided as string
+      stars: stars !== undefined ? (isNaN(Number(stars)) ? 5 : Number(stars)) : 5,
       image: uploadResult.secure_url,
       imagePublicId: uploadResult.public_id,
       subCategory: subCategory || null,
@@ -209,7 +210,10 @@ export const updateDish = async (req, res) => {
     if (name) dish.name = name;
     if (price !== undefined) dish.price = price;
     if (description !== undefined) dish.description = description;
-    if (stars !== undefined) dish.stars = stars;
+    if (stars !== undefined) {
+      const s = Number(stars);
+      if (!isNaN(s)) dish.stars = s;
+    }
     // allow clearing subCategory by passing empty string or null
     if (subCategory !== undefined) dish.subCategory = subCategory || null;
     if (category !== undefined) dish.category = category || null;
