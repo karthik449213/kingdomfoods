@@ -41,9 +41,9 @@ export const addDish = async (req, res) => {
       return res.status(400).json({ message: "Image is required" });
     }
 
-    // Validate file size (max 5MB)
-    if (req.file.size > 5 * 1024 * 1024) {
-      return res.status(413).json({ message: "Image too large (max 5MB)" });
+    // Validate file size (max 50MB)
+    if (req.file.size > 50 * 1024 * 1024) {
+      return res.status(413).json({ message: "Image too large (max 50MB)" });
     }
 
     const uploadResult = await uploadBuffer(req.file.buffer, {
@@ -95,9 +95,9 @@ export const updateDish = async (req, res) => {
 
     // If new image uploaded
     if (req.file) {
-      // Validate file size
-      if (req.file.size > 5 * 1024 * 1024) {
-        return res.status(413).json({ message: "Image too large (max 5MB)" });
+      // Validate file size (max 50MB)
+      if (req.file.size > 50 * 1024 * 1024) {
+        return res.status(413).json({ message: "Image too large (max 50MB)" });
       }
 
       const oldImageId = dish.imagePublicId;

@@ -20,6 +20,10 @@ const subCategorySchema = new mongoose.Schema({
     ref: 'Category',
     required: true,
   },
+  hidden: {
+    type: Boolean,
+    default: false, // Admin can hide subcategory from menu
+  },
 }, {
   timestamps: true,
 });

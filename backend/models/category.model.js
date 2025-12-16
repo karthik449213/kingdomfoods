@@ -5,6 +5,7 @@ const CategorySchema = new mongoose.Schema(
     name: { type: String, required: true, trim: true, unique: true },
     slug: { type: String, unique: true },
     image: { type: String, required: true }, // Cloudinary URL
+    hidden: { type: Boolean, default: false }, // Admin can hide category from menu
   },
   { timestamps: true }
 );

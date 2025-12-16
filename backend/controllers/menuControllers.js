@@ -32,7 +32,10 @@ const uploadBufferToCloudinary = (buffer, options = {}) => {
 // CATEGORY CONTROLLERS
 export const listCategories = async (req, res) => {
   try {
-    const categories = await Category.find().sort({ createdAt: -1 });
+    // For public requests, exclude hidden categories. For admin, include all.
+    const isAdmin = req.headers.authorization && req.headers.authorization.includes('Bearer');
+    const query = isAdmin ? {} : { hidden: false };
+    const categories = await Category.find(query).sort({ createdAt: -1 });
     res.json(categories);
   } catch (e) {
     res.status(500).json({ message: e.message, error: {} });
@@ -48,9 +51,9 @@ export const createCategory = async (req, res) => {
       return res.status(400).json({ message: "image is required" });
     }
 
-    // Validate file size
-    if (req.file.size > 5 * 1024 * 1024) {
-      return res.status(413).json({ message: "Image too large (max 5MB)" });
+    // Validate file size (max 50MB)
+    if (req.file.size > 50 * 1024 * 1024) {
+      return res.status(413).json({ message: "Image too large (max 50MB)" });
     }
 
     const uploadResult = await uploadBuffer(req.file.buffer, {
@@ -94,9 +97,9 @@ export const updateCategory = async (req, res) => {
     if (name) category.name = name;
 
     if (req.file && req.file.buffer) {
-      // Validate file size
-      if (req.file.size > 5 * 1024 * 1024) {
-        return res.status(413).json({ message: "Image too large (max 5MB)" });
+      // Validate file size (max 50MB)
+      if (req.file.size > 50 * 1024 * 1024) {
+        return res.status(413).json({ message: "Image too large (max 50MB)" });
       }
 
       const uploadResult = await uploadBuffer(req.file.buffer, {
@@ -136,15 +139,19 @@ export const listDishes = async (req, res) => {
     const limit = parseInt(req.query.limit) || 20;
     const skip = (page - 1) * limit;
 
+    // For public requests, exclude hidden dishes. For admin, include all.
+    const isAdmin = req.headers.authorization && req.headers.authorization.includes('Bearer');
+    const query = isAdmin ? {} : { hidden: false };
+
     const [dishes, total] = await Promise.all([
-      Dish.find()
+      Dish.find(query)
         .populate("subCategory", "name slug")
         .populate("category", "name slug")
         .sort({ createdAt: -1 })
         .skip(skip)
         .limit(limit)
         .lean(),
-      Dish.countDocuments()
+      Dish.countDocuments(query)
     ]);
 
     res.json({
@@ -171,9 +178,9 @@ export const createDish = async (req, res) => {
       return res.status(400).json({ message: "image is required" });
     }
 
-    // Validate file size (max 5MB)
-    if (req.file.size > 5 * 1024 * 1024) {
-      return res.status(413).json({ message: "Image too large (max 5MB)" });
+    // Validate file size (max 50MB)
+    if (req.file.size > 50 * 1024 * 1024) {
+      return res.status(413).json({ message: "Image too large (max 50MB)" });
     }
 
     const uploadResult = await uploadBuffer(req.file.buffer, {
@@ -219,9 +226,9 @@ export const updateDish = async (req, res) => {
     if (category !== undefined) dish.category = category || null;
 
     if (req.file && req.file.buffer) {
-      // Validate file size
-      if (req.file.size > 5 * 1024 * 1024) {
-        return res.status(413).json({ message: "Image too large (max 5MB)" });
+      // Validate file size (max 50MB)
+      if (req.file.size > 50 * 1024 * 1024) {
+        return res.status(413).json({ message: "Image too large (max 50MB)" });
       }
 
       const oldImageId = dish.imagePublicId;
@@ -270,7 +277,10 @@ export const deleteDish = async (req, res) => {
 // SUBCATEGORY CONTROLLERS
 export const listSubCategories = async (req, res) => {
   try {
-    const subCategories = await SubCategory.find().populate('category').sort({ createdAt: -1 });
+    // For public requests, exclude hidden subcategories. For admin, include all.
+    const isAdmin = req.headers.authorization && req.headers.authorization.includes('Bearer');
+    const query = isAdmin ? {} : { hidden: false };
+    const subCategories = await SubCategory.find(query).populate('category').sort({ createdAt: -1 });
     res.json(subCategories);
   } catch (e) {
     res.status(500).json({ message: e.message });
@@ -286,9 +296,9 @@ export const createSubCategory = async (req, res) => {
       return res.status(400).json({ message: "image is required" });
     }
 
-    // Validate file size
-    if (req.file.size > 5 * 1024 * 1024) {
-      return res.status(413).json({ message: "Image too large (max 5MB)" });
+    // Validate file size (max 50MB)
+    if (req.file.size > 50 * 1024 * 1024) {
+      return res.status(413).json({ message: "Image too large (max 50MB)" });
     }
 
     const uploadResult = await uploadBuffer(req.file.buffer, {
@@ -333,9 +343,9 @@ export const updateSubCategory = async (req, res) => {
     if (category) subCategory.category = category;
 
     if (req.file && req.file.buffer) {
-      // Validate file size
-      if (req.file.size > 5 * 1024 * 1024) {
-        return res.status(413).json({ message: "Image too large (max 5MB)" });
+      // Validate file size (max 50MB)
+      if (req.file.size > 50 * 1024 * 1024) {
+        return res.status(413).json({ message: "Image too large (max 50MB)" });
       }
 
       const uploadResult = await uploadBuffer(req.file.buffer, {
@@ -370,11 +380,14 @@ export const deleteSubCategory = async (req, res) => {
 // Get full menu organized by categories and subcategories (simplified - only dishes with subcategories)
 export const getFullMenu = async (req, res) => {
   try {
+    // For public requests, exclude hidden items. For admin, include all.
+    const isAdmin = req.headers.authorization && req.headers.authorization.includes('Bearer');
+    
     // Fetch all data in parallel with just 3 queries
     const [categories, subCategories, dishes] = await Promise.all([
-      Category.find().sort({ createdAt: -1 }).lean(),
-      SubCategory.find().populate('category', 'name slug').sort({ createdAt: -1 }).lean(),
-      Dish.find({ subCategory: { $ne: null } })  // Only dishes with subcategories
+      Category.find(isAdmin ? {} : { hidden: false }).sort({ createdAt: -1 }).lean(),
+      SubCategory.find(isAdmin ? {} : { hidden: false }).populate('category', 'name slug').sort({ createdAt: -1 }).lean(),
+      Dish.find(isAdmin ? { subCategory: { $ne: null } } : { subCategory: { $ne: null }, hidden: false })  // Only dishes with subcategories
         .populate({ path: 'subCategory', select: 'name slug category', populate: { path: 'category', select: 'name slug' } })
         .sort({ createdAt: -1 })
         .lean()
@@ -410,14 +423,18 @@ export const getDishesByNoSubcategory = async (req, res) => {
     const limit = parseInt(req.query.limit) || 20;
     const skip = (page - 1) * limit;
 
+    // For public requests, exclude hidden items. For admin, include all.
+    const isAdmin = req.headers.authorization && req.headers.authorization.includes('Bearer');
+    const query = isAdmin ? { subCategory: null } : { subCategory: null, hidden: false };
+
     const [dishes, total] = await Promise.all([
-      Dish.find({ subCategory: null })
+      Dish.find(query)
         .populate('category', 'name slug')
         .sort({ createdAt: -1 })
         .skip(skip)
         .limit(limit)
         .lean(),
-      Dish.countDocuments({ subCategory: null })
+      Dish.countDocuments(query)
     ]);
 
     res.json({
@@ -442,15 +459,19 @@ export const getDishesBySubcategory = async (req, res) => {
     const limit = parseInt(req.query.limit) || 20;
     const skip = (page - 1) * limit;
 
+    // For public requests, exclude hidden items. For admin, include all.
+    const isAdmin = req.headers.authorization && req.headers.authorization.includes('Bearer');
+    const query = isAdmin ? { subCategory: { $ne: null } } : { subCategory: { $ne: null }, hidden: false };
+
     const [dishes, total] = await Promise.all([
-      Dish.find({ subCategory: { $ne: null } })
+      Dish.find(query)
         .populate({ path: 'subCategory', select: 'name slug category', populate: { path: 'category', select: 'name slug' } })
         .populate('category', 'name slug')
         .sort({ createdAt: -1 })
         .skip(skip)
         .limit(limit)
         .lean(),
-      Dish.countDocuments({ subCategory: { $ne: null } })
+      Dish.countDocuments(query)
     ]);
 
     res.json({
@@ -475,22 +496,25 @@ export const getAllDishesOrganized = async (req, res) => {
     const limit = parseInt(req.query.limit) || 20;
     const skip = (page - 1) * limit;
 
+    // For public requests, exclude hidden items. For admin, include all.
+    const isAdmin = req.headers.authorization && req.headers.authorization.includes('Bearer');
+
     const [standalondDishes, categorizedDishes, standaloneTotal, categorizedTotal] = await Promise.all([
-      Dish.find({ subCategory: null })
+      Dish.find(isAdmin ? { subCategory: null } : { subCategory: null, hidden: false })
         .populate('category', 'name slug')
         .sort({ createdAt: -1 })
         .skip(skip)
         .limit(limit)
         .lean(),
-      Dish.find({ subCategory: { $ne: null } })
+      Dish.find(isAdmin ? { subCategory: { $ne: null } } : { subCategory: { $ne: null }, hidden: false })
         .populate({ path: 'subCategory', select: 'name slug category', populate: { path: 'category', select: 'name slug' } })
         .populate('category', 'name slug')
         .sort({ createdAt: -1 })
         .skip(skip)
         .limit(limit)
         .lean(),
-      Dish.countDocuments({ subCategory: null }),
-      Dish.countDocuments({ subCategory: { $ne: null } })
+      Dish.countDocuments(isAdmin ? { subCategory: null } : { subCategory: null, hidden: false }),
+      Dish.countDocuments(isAdmin ? { subCategory: { $ne: null } } : { subCategory: { $ne: null }, hidden: false })
     ]);
 
     res.json({
@@ -521,12 +545,19 @@ export const getAllDishesOrganized = async (req, res) => {
 // Get dishes organized by Category > SubCategory > Dishes
 export const getOrganizedMenu = async (req, res) => {
   try {
-    const categories = await Category.find().sort({ createdAt: 1 });
+    // For public requests, exclude hidden items. For admin, include all.
+    const isAdmin = req.headers.authorization && req.headers.authorization.includes('Bearer');
+    
+    const categories = await Category.find(isAdmin ? {} : { hidden: false }).sort({ createdAt: 1 });
     
     const organizedMenu = [];
     
     for (const category of categories) {
-      const subCategories = await SubCategory.find({ category: category._id });
+      const subCategories = await SubCategory.find(
+        isAdmin 
+          ? { category: category._id }
+          : { category: category._id, hidden: false }
+      );
       
       const categoryData = {
         _id: category._id,
@@ -537,7 +568,11 @@ export const getOrganizedMenu = async (req, res) => {
       };
       
       for (const subCategory of subCategories) {
-        const dishes = await Dish.find({ subCategory: subCategory._id });
+        const dishes = await Dish.find(
+          isAdmin 
+            ? { subCategory: subCategory._id }
+            : { subCategory: subCategory._id, hidden: false }
+        );
         
         categoryData.subCategories.push({
           _id: subCategory._id,
@@ -561,6 +596,84 @@ export const getOrganizedMenu = async (req, res) => {
       categoriesCount: organizedMenu.length,
       data: organizedMenu
     });
+  } catch (e) {
+    res.status(500).json({ message: e.message });
+  }
+};
+
+// Toggle category visibility
+export const toggleCategoryVisibility = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const category = await Category.findById(id);
+    if (!category) return res.status(404).json({ message: "Category not found" });
+
+    category.hidden = !category.hidden;
+    await category.save();
+    res.json({ success: true, hidden: category.hidden, message: `Category ${category.hidden ? 'hidden' : 'shown'}` });
+  } catch (e) {
+    res.status(500).json({ message: e.message });
+  }
+};
+
+// Toggle subcategory visibility
+export const toggleSubCategoryVisibility = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const subCategory = await SubCategory.findById(id);
+    if (!subCategory) return res.status(404).json({ message: "SubCategory not found" });
+
+    subCategory.hidden = !subCategory.hidden;
+    await subCategory.save();
+    res.json({ success: true, hidden: subCategory.hidden, message: `SubCategory ${subCategory.hidden ? 'hidden' : 'shown'}` });
+  } catch (e) {
+    res.status(500).json({ message: e.message });
+  }
+};
+
+// Toggle dish visibility
+export const toggleDishVisibility = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const dish = await Dish.findById(id);
+    if (!dish) return res.status(404).json({ message: "Dish not found" });
+
+    dish.hidden = !dish.hidden;
+    await dish.save();
+    res.json({ success: true, hidden: dish.hidden, message: `Dish ${dish.hidden ? 'hidden' : 'shown'}` });
+  } catch (e) {
+    res.status(500).json({ message: e.message });
+  }
+};
+
+// Get all hidden categories (admin only)
+export const getHiddenCategories = async (req, res) => {
+  try {
+    const categories = await Category.find({ hidden: true }).sort({ updatedAt: -1 });
+    res.json(categories);
+  } catch (e) {
+    res.status(500).json({ message: e.message });
+  }
+};
+
+// Get all hidden subcategories (admin only)
+export const getHiddenSubCategories = async (req, res) => {
+  try {
+    const subCategories = await SubCategory.find({ hidden: true }).populate('category').sort({ updatedAt: -1 });
+    res.json(subCategories);
+  } catch (e) {
+    res.status(500).json({ message: e.message });
+  }
+};
+
+// Get all hidden dishes (admin only)
+export const getHiddenDishes = async (req, res) => {
+  try {
+    const dishes = await Dish.find({ hidden: true })
+      .populate('subCategory', 'name slug')
+      .populate('category', 'name slug')
+      .sort({ updatedAt: -1 });
+    res.json(dishes);
   } catch (e) {
     res.status(500).json({ message: e.message });
   }

@@ -12,6 +12,7 @@ const DishSchema = new mongoose.Schema(
     // Optional category reference for standalone dishes (no subCategory)
     category: { type: mongoose.Schema.Types.ObjectId, ref: "Category", required: false, default: null },
     available: { type: Boolean, default: true },
+    hidden: { type: Boolean, default: false }, // Admin can hide item from menu
   },
   { timestamps: true }
 );

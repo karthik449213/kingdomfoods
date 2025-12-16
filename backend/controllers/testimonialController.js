@@ -43,8 +43,8 @@ export const createTestimonial = async (req, res) => {
 
     // Upload profile image if provided
     if (req.file && req.file.buffer) {
-      if (req.file.size > 5 * 1024 * 1024) {
-        return res.status(413).json({ message: 'Image too large (max 5MB)' });
+      if (req.file.size > 50 * 1024 * 1024) {
+        return res.status(413).json({ message: 'Image too large (max 50MB)' });
       }
 
       try {
@@ -164,8 +164,8 @@ export const updateTestimonial = async (req, res) => {
 
     // Handle profile image update
     if (req.file && req.file.buffer) {
-      if (req.file.size > 5 * 1024 * 1024) {
-        return res.status(413).json({ message: 'Image too large (max 5MB)' });
+      if (req.file.size > 50 * 1024 * 1024) {
+        return res.status(413).json({ message: 'Image too large (max 50MB)' });
       }
 
       // Delete old image
