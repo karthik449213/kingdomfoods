@@ -73,6 +73,8 @@ app.use("/dashboard", dashboardRoutes);
 app.use("/api/categories", categoryRoutes);
 app.use("/menu", dishRoutes);
 app.use("/api/menu", menuRoutes);
+app.use("api/menu/categories",categoryRoutes);
+
 app.use("/api/testimonials", testimonialRoutes);
 app.use("/api/payments", paymentRoutes);
 app.use("/api/analytics", analyticsRoutes);
