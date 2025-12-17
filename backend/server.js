@@ -24,7 +24,7 @@ const httpServer = createServer(app);
 // WebSocket Configuration
 const io = new Server(httpServer, {
   cors: {
-    origin: process.env.FRONTEND_ORIGIN || "http://localhost:5173",
+    origin: process.env.FRONTEND_ORIGIN || "http://localhost:5174",
     methods: ["GET", "POST"]
   }
 });
