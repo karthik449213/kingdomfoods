@@ -15,8 +15,7 @@ import categoryRoutes from "./routes/categoryRoutes.js";
 import dishRoutes from "./routes/dishRoutes.js";
 import menuRoutes from "./routes/menuRoutes.js";
 import testimonialRoutes from "./routes/testimonialRoutes.js";
-import paymentRoutes from "./routes/paymentRoutes.js";
-import analyticsRoutes from "./routes/analyticsRoutes.js";
+
 
 const app = express();
 const httpServer = createServer(app);
@@ -29,35 +28,8 @@ const io = new Server(httpServer, {
   }
 });
 
-// Make io globally accessible for event emissions
-global.io = io;
 
-// WebSocket event handlers
-io.on("connection", (socket) => {
-  console.log("✓ Client connected:", socket.id);
 
-  // Join kitchen staff room
-  socket.on("join_kitchen", (data) => {
-    socket.join("kitchen_staff");
-    console.log("Kitchen staff joined:", socket.id);
-  });
-
-  // Join delivery staff room
-  socket.on("join_delivery", (staffId) => {
-    socket.join(`delivery_${staffId}`);
-    console.log("Delivery staff joined:", socket.id);
-  });
-
-  // Join admin dashboard room
-  socket.on("join_dashboard", (adminId) => {
-    socket.join("admin_dashboard");
-    console.log("Admin joined dashboard:", socket.id);
-  });
-
-  socket.on("disconnect", () => {
-    console.log("Client disconnected:", socket.id);
-  });
-});
 
 // Middleware
 // Restrict CORS in production; allow all in development for convenience
@@ -65,19 +37,28 @@ const corsOptions = process.env.NODE_ENV === 'production'
   ? { origin: process.env.FRONTEND_ORIGIN || 'https://your-production-domain.com' }
   : {};
 app.use(cors(corsOptions));
-app.use(helmet());
+app.use(helmet({
+  xFrameOptions: { action: 'deny' },
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      scriptSrc: ["'self'", "'unsafe-inline'"],
+      styleSrc: ["'self'", "'unsafe-inline'"],
+      imgSrc: ["'self'", 'data:', 'https:'],
+      connectSrc: ["'self'", 'https:'],
+      frameAncestors: ["'none'"],
+    }
+  }
+}));
 app.use(compression()); // PERFORMANCE: Compress all responses (70% smaller)
 app.use(express.json());
 app.use("/api/auth", authRoutes);
 app.use("/dashboard", dashboardRoutes);
-app.use("/api/categories", categoryRoutes);
-app.use("/menu", dishRoutes);
 app.use("/api/menu", menuRoutes);
-app.use("api/menu/categories",categoryRoutes);
 
 app.use("/api/testimonials", testimonialRoutes);
-app.use("/api/payments", paymentRoutes);
-app.use("/api/analytics", analyticsRoutes);
+
+
 
 // Test Route
 app.get("/", (req, res) => {

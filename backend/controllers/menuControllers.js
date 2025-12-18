@@ -13,31 +13,18 @@ const generateSlug = (name) => {
     .replace(/^-+|-+$/g, ''); // Remove leading/trailing hyphens
 };
 
-// Helper function to upload buffer to Cloudinary using stream
-const uploadBufferToCloudinary = (buffer, options = {}) => {
-  return new Promise((resolve, reject) => {
-    const stream = cloudinary.uploader.upload_stream(options, (error, result) => {
-      if (error) {
-        reject(error);
-      } else {
-        resolve(result);
-      }
-    });
-
-    // Convert buffer to readable stream and pipe to Cloudinary
-    Readable.from(buffer).pipe(stream);
-  });
-};
-
 // CATEGORY CONTROLLERS
 export const listCategories = async (req, res) => {
   try {
     // For public requests, exclude hidden categories. For admin, include all.
     const isAdmin = req.headers.authorization && req.headers.authorization.includes('Bearer');
     const query = isAdmin ? {} : { hidden: false };
+    console.log(`[listCategories] isAdmin: ${isAdmin}, query:`, query);
     const categories = await Category.find(query).sort({ createdAt: -1 });
+    console.log(`[listCategories] Found ${categories.length} categories`);
     res.json(categories);
   } catch (e) {
+    console.error('[listCategories] Error:', e.message);
     res.status(500).json({ message: e.message, error: {} });
   }
 };
@@ -94,7 +81,11 @@ export const updateCategory = async (req, res) => {
     const category = await Category.findById(id);
     if (!category) return res.status(404).json({ message: "Category not found" });
 
-    if (name) category.name = name;
+    if (name) {
+      category.name = name;
+      // Regenerate slug when name changes
+      category.slug = generateSlug(name);
+    }
 
     if (req.file && req.file.buffer) {
       // Validate file size (max 50MB)
@@ -280,9 +271,12 @@ export const listSubCategories = async (req, res) => {
     // For public requests, exclude hidden subcategories. For admin, include all.
     const isAdmin = req.headers.authorization && req.headers.authorization.includes('Bearer');
     const query = isAdmin ? {} : { hidden: false };
+    console.log(`[listSubCategories] isAdmin: ${isAdmin}, query:`, query);
     const subCategories = await SubCategory.find(query).populate('category').sort({ createdAt: -1 });
+    console.log(`[listSubCategories] Found ${subCategories.length} subcategories`);
     res.json(subCategories);
   } catch (e) {
+    console.error('[listSubCategories] Error:', e.message);
     res.status(500).json({ message: e.message });
   }
 };
@@ -339,7 +333,11 @@ export const updateSubCategory = async (req, res) => {
     const subCategory = await SubCategory.findById(id);
     if (!subCategory) return res.status(404).json({ message: "SubCategory not found" });
 
-    if (name) subCategory.name = name;
+    if (name) {
+      subCategory.name = name;
+      // Regenerate slug when name changes
+      subCategory.slug = generateSlug(name);
+    }
     if (category) subCategory.category = category;
 
     if (req.file && req.file.buffer) {

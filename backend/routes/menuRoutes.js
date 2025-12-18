@@ -39,6 +39,7 @@ router.get("/dishes/organized/all", getAllDishesOrganized);
 router.get("/organized", getOrganizedMenu);
 router.get("/subcategories", listSubCategories);
 
+
 // Admin protected routes - Hidden items
 router.get("/admin/hidden-categories", adminAuth, getHiddenCategories);
 router.get("/admin/hidden-subcategories", adminAuth, getHiddenSubCategories);
