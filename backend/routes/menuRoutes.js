@@ -1,6 +1,7 @@
 import express from "express";
 import adminAuth from "../middleware/adminAuth.js";
 import upload from "../middleware/upload.js";
+import { getDish } from "../controllers/dishController.js";
 import {
   listCategories,
   createCategory,
@@ -33,6 +34,7 @@ const router = express.Router();
 router.get("/full", getFullMenu);
 router.get("/categories", listCategories);
 router.get("/dishes", listDishes);
+router.get("/dishes/:id", getDish);
 router.get("/dishes/standalone/all", getDishesByNoSubcategory);
 router.get("/dishes/categorized/all", getDishesBySubcategory);
 router.get("/dishes/organized/all", getAllDishesOrganized);
