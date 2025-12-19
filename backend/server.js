@@ -73,11 +73,17 @@ app.use((err, req, res, next) => {
 // Server Start - IMPROVED: Ensure DB connects before starting server
 const startServer = async () => {
   try {
+    // Validate critical environment variables
+    if (!process.env.JWT_SECRET) {
+      throw new Error('JWT_SECRET environment variable is not set. Admin authentication will fail.');
+    }
+    
     await connectDB();
     
     const PORT = process.env.PORT || 5000;
     app.listen(PORT, () => {
       console.log(`✓ Server running on port ${PORT}`);
+      console.log(`✓ JWT authentication enabled`);
     });
   } catch (error) {
     console.error('✗ Failed to start server:', error.message);
