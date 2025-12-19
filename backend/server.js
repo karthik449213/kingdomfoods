@@ -44,7 +44,7 @@ app.use(helmet({
       scriptSrc: ["'self'", "'unsafe-inline'"],
       styleSrc: ["'self'", "'unsafe-inline'"],
       imgSrc: ["'self'", 'data:', 'https:'],
-      connectSrc: ["'self'", 'https://kingdomfoods-api.onrender.com', 'https://nominatim.openstreetmap.org'],
+      connectSrc: ["'self'", 'https://kingdomfoods.onrender.com'],
       frameAncestors: ["'none'"],
     }
   }
