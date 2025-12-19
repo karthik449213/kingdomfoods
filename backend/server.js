@@ -21,10 +21,20 @@ const app = express();
 
 
 // Middleware
-// Restrict CORS in production; allow all in development for convenience
-const corsOptions = process.env.NODE_ENV === 'production'
-  ? { origin: process.env.FRONTEND_ORIGIN || 'https://your-production-domain.com' }
-  : {};
+// CORS Configuration
+const corsOptions = {
+  origin: process.env.NODE_ENV === 'production'
+    ? [
+        process.env.FRONTEND_ORIGIN || 'https://peelojuice.netlify.app',
+        'https://peelojuice.netlify.app',
+        'http://localhost:5173',
+        'http://localhost:5174'
+      ]
+    : '*',
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+};
 app.use(cors(corsOptions));
 app.use(helmet({
   xFrameOptions: { action: 'deny' },
