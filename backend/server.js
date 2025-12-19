@@ -6,8 +6,6 @@ import express from "express";
 import cors from "cors";
 import helmet from "helmet";
 import compression from "compression";
-import { createServer } from "http";
-import { Server } from "socket.io";
 import connectDB from "./config/db.js";
 import authRoutes from "./routes/authRoutes.js";
 import dashboardRoutes from "./routes/dashboard.js";
@@ -18,15 +16,6 @@ import testimonialRoutes from "./routes/testimonialRoutes.js";
 
 
 const app = express();
-const httpServer = createServer(app);
-
-// WebSocket Configuration
-const io = new Server(httpServer, {
-  cors: {
-    origin: process.env.FRONTEND_ORIGIN || "http://localhost:5174",
-    methods: ["GET", "POST"]
-  }
-});
 
 
 
@@ -45,7 +34,7 @@ app.use(helmet({
       scriptSrc: ["'self'", "'unsafe-inline'"],
       styleSrc: ["'self'", "'unsafe-inline'"],
       imgSrc: ["'self'", 'data:', 'https:'],
-      connectSrc: ["'self'", 'https:'],
+      connectSrc: ["'self'", 'https://kingdomfoods-api.onrender.com', 'https://nominatim.openstreetmap.org'],
       frameAncestors: ["'none'"],
     }
   }
@@ -77,9 +66,8 @@ const startServer = async () => {
     await connectDB();
     
     const PORT = process.env.PORT || 5000;
-    httpServer.listen(PORT, () => {
+    app.listen(PORT, () => {
       console.log(`✓ Server running on port ${PORT}`);
-      console.log(`✓ WebSocket server running on ws://localhost:${PORT}`);
     });
   } catch (error) {
     console.error('✗ Failed to start server:', error.message);
